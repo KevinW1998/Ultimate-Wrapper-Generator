@@ -60,6 +60,7 @@ void UWrapperGeneratorVB6::Start()
 
 void UWrapperGeneratorVB6::End()
 {
+    m_dataStream << m_enumStrDataBuf << m_funcStrDataBuf << std::endl;
     m_dataStream.close();
 }
 
@@ -73,11 +74,7 @@ void UWrapperGeneratorVB6::NextFuncDecl(clang::FunctionDecl* func)
     vb6WrapperLine += " Lib \"" + m_libName + "\" (";
 
     
-    // std::cout << "[DEBUG] Func Name: " << func->getName().data() << std::endl;
     for (clang::ParmVarDecl* nextParameter : func->parameters()) {
-        // std::cout << "[DEBUG] Parameter Name: " << nextParameter->getName().data() << std::endl;
-        // std::cout << "[DEBUG] Parameter Type: " << nextParameter->getType()->getTypeClassName() << std::endl;
-        
         bool isRef = false;
         const char* vb6Type = UVB6Helper::ClangTypeToVB6(nextParameter->getType(), true, &isRef);
         vb6WrapperLine += (isRef ? "ByRef " : "ByVal ");
@@ -99,7 +96,7 @@ void UWrapperGeneratorVB6::NextFuncDecl(clang::FunctionDecl* func)
         vb6WrapperLine += ")";
     }
     
-    m_dataStream << vb6WrapperLine << std::endl;
+    m_funcStrDataBuf += vb6WrapperLine + "\n";
 }
 
 void UWrapperGeneratorVB6::NextEnumDecl(clang::EnumDecl* enumDecl)
@@ -121,5 +118,5 @@ void UWrapperGeneratorVB6::NextEnumDecl(clang::EnumDecl* enumDecl, const std::st
     }
     vb6WrapperLine += "End Enum\n";
 
-    m_dataStream << vb6WrapperLine << std::endl;
+    m_enumStrDataBuf += vb6WrapperLine + "\n";
 }

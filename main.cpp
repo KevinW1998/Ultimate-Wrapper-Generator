@@ -20,54 +20,6 @@
 
 #include "core/UASTConsumer.h"
 #include "core/WrapperGenerator/UWrapperGeneratorVB6.h"
-/* 
-class MyASTConsumer : public clang::ASTConsumer
-{
-public:
-    MyASTConsumer() : clang::ASTConsumer() { }
-    virtual ~MyASTConsumer() { }
-
-    virtual bool HandleTopLevelDecl(clang::DeclGroupRef d)
-    {
-        for (const auto& nextDecl : d) {
-            std::cout << "Name: " << nextDecl->getDeclKindName() << std::endl;
-            
-            switch (nextDecl->getKind())
-            {
-            case clang::Decl::Kind::LinkageSpec:
-            {
-                clang::LinkageSpecDecl* nextLinkageSpecDecl = llvm::dyn_cast<clang::LinkageSpecDecl>(nextDecl);
-                assert(nextLinkageSpecDecl, "nextLinkageSpecDecl must be vaild!");
-                for (const auto& nextLinkageDecl : nextLinkageSpecDecl->decls()) {
-                    if (nextLinkageDecl->getKind() == clang::Decl::Function) {
-                        clang::FunctionDecl* nextLinkFuncDecl = llvm::dyn_cast<clang::FunctionDecl>(nextLinkageDecl);
-                    }
-                }
-
-                break;
-            }
-            case clang::Decl::Kind::Function:
-            {
-                clang::FunctionDecl* nextFunctionDecl = llvm::dyn_cast<clang::FunctionDecl>(nextDecl);
-                assert(nextFunctionDecl, "nextFunctionDecl must be vaild!");
-                if (nextFunctionDecl) {
-                    if (nextFunctionDecl->isExternC()) {
-                        std::cout << "Function Name: " << nextFunctionDecl->getName().data() << std::endl;
-                    }
-                }
-                break;
-            }
-            default:
-                break;
-            }
-            
-            
-            
-        }
-        return true;
-    }
-};
-*/
 
 
 int main(int argc, const char* argv[]) 
@@ -136,5 +88,6 @@ int main(int argc, const char* argv[])
     clang::ParseAST(ci.getPreprocessor(), &ci.getASTConsumer(), ci.getASTContext(), true, clang::TU_Complete, nullptr, true);
     ci.getDiagnosticClient().EndSourceFile();
 
+    vb6Generator.End();
     return EXIT_SUCCESS;
 }
