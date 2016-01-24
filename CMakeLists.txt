@@ -30,6 +30,8 @@ add_executable (uwgen
     Core/UASTConsumer.cpp
 )
 
+add_definitions(-std=c++11)
+
 # Clang dependencies.
 
 target_link_libraries(uwgen

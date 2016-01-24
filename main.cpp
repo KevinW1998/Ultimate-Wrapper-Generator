@@ -1,6 +1,11 @@
 
 #include <iostream>
 
+#ifdef __unix__
+#define __STDC_LIMIT_MACROS
+#define __STDC_CONSTANT_MACROS
+#endif
+
 #include "llvm/Support/Host.h"
 #include "llvm/ADT/IntrusiveRefCntPtr.h"
 
@@ -18,8 +23,8 @@
 #include "clang/Parse/Parser.h"
 #include "clang/Parse/ParseAST.h"
 
-#include "core/UASTConsumer.h"
-#include "core/WrapperGenerator/UWrapperGeneratorVB6.h"
+#include "Core/UASTConsumer.h"
+#include "Core/WrapperGenerator/UWrapperGeneratorVB6.h"
 
 
 int main(int argc, const char* argv[]) 
