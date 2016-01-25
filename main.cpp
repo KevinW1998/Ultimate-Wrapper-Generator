@@ -60,10 +60,12 @@ int main(int argc, const char* argv[])
         return 1;
     }
    
+    // Create compiler
     CompilerInstance ci;
     DiagnosticOptions diagnosticOptions;
     ci.createDiagnostics();
 
+    // Set c++ language
     clang::LangOptions& langOpts = ci.getLangOpts();
     langOpts.RTTI = 1;
     langOpts.Bool = 1;
@@ -73,9 +75,13 @@ int main(int argc, const char* argv[])
     langOpts.POSIXThreads = 1;
     langOpts.SpellChecking = 1;
     langOpts.DeclSpecKeyword = 1;
-
     ci.getInvocation().setLangDefaults(langOpts, clang::IK_CXX, clang::LangStandard::lang_gnucxx11);
     
+    // Add additional include paths:
+    clang::HeaderSearchOptions& headerSearchOpts = ci.getHeaderSearchOpts();
+    for (const std::string& nextPath : vm["include-path"].as<std::vector<std::string>>()) {
+        headerSearchOpts.AddPath(nextPath, clang::frontend::IncludeDirGroup::Angled, false, true);
+    }
 
     std::shared_ptr<clang::TargetOptions> pto = std::make_shared<clang::TargetOptions>();
     pto->Triple = llvm::sys::getDefaultTargetTriple();
@@ -100,6 +106,7 @@ int main(int argc, const char* argv[])
 
     const FileEntry *pFile = ci.getFileManager().getFile(argv[1]);
     ci.getSourceManager().setMainFileID(ci.getSourceManager().createFileID(pFile, clang::SourceLocation(), clang::SrcMgr::C_User));
+    
     
     ci.getDiagnosticClient().BeginSourceFile(ci.getLangOpts(),
         &ci.getPreprocessor());
