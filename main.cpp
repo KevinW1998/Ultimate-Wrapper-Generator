@@ -26,6 +26,7 @@
 #include "Core/UASTConsumer.h"
 #include "Core/WrapperGenerator/UWrapperGeneratorVB6.h"
 
+#include <boost/program_options.hpp>
 
 int main(int argc, const char* argv[]) 
 {
@@ -39,14 +40,26 @@ int main(int argc, const char* argv[])
     using clang::Parser;
     using clang::DiagnosticOptions;
     using clang::TextDiagnosticPrinter;
-
-    if (argc <= 1) {
-        std::cerr << "Usage: uwgen <file>" << std::endl;
-        return EXIT_FAILURE;
-    }
+    namespace po = boost::program_options;
     
+    po::positional_options_description p;
+    p.add("input-file", -1);
+    po::options_description desc("Allowed options");
+    desc.add_options()
+        ("help", "produce help message")
+        ("input-file", po::value<std::string>(), "The input header/cpp file")
+        ("out-file,o", po::value<std::string>()->default_value("out.bas"), "The output file (default is out.*)")
+        ("include-path,I", po::value< std::vector<std::string> >(), "Additional include paths");
 
+    po::variables_map vm;
+    po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
+    po::notify(vm);
 
+    if (vm.count("help") || !vm.count("input-file")) {
+        std::cout << desc << "\n";
+        return 1;
+    }
+   
     CompilerInstance ci;
     DiagnosticOptions diagnosticOptions;
     ci.createDiagnostics();
@@ -75,7 +88,7 @@ int main(int argc, const char* argv[])
     ci.getPreprocessorOpts().UsePredefines = false;
 
     // AST and Wrapper:
-    UWrapperGeneratorVB6 vb6Generator("out.bas");
+    UWrapperGeneratorVB6 vb6Generator(vm["out-file"].as<std::string>());
     vb6Generator.setLibName("example_library");
     ci.setASTConsumer(llvm::make_unique<UASTConsumer>(&vb6Generator));
     ci.createASTContext();
