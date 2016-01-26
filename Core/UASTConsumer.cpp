@@ -5,9 +5,11 @@
 
 bool UASTConsumer::HandleTopLevelDecl(clang::DeclGroupRef d)
 {
+    // d->getSingleDecl()->getLocation().
     // Go through the top items
     for (const auto& nextDecl : d) {
-        std::cout << "Next top Decl: " << nextDecl->getDeclKindName() << std::endl;
+        // std::cout << "Next top Decl: " << nextDecl->getDeclKindName() << std::endl;
+
 
         // Now look into those, which get linked aka. 'extern "C"'.
         if (nextDecl->getKind() == clang::Decl::LinkageSpec) {
@@ -17,7 +19,7 @@ bool UASTConsumer::HandleTopLevelDecl(clang::DeclGroupRef d)
             // Now go through all items, which are in extern "C"
             for (const auto& nextLinkDecl : linkGroup->decls()) 
             {
-                std::cout << "Next link Decl: " << nextLinkDecl->getDeclKindName() << std::endl;
+                // std::cout << "Next link Decl: " << nextLinkDecl->getDeclKindName() << std::endl;
                 switch (nextLinkDecl->getKind()) {
                 case clang::Decl::Kind::Function:
                 {

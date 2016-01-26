@@ -20,7 +20,7 @@ public:
     virtual void NextEnumDecl(clang::EnumDecl* /*enumDecl*/, const std::string& /*name*/) {}
 
     std::string getLibName() const { return m_libName; }
-    void setLibName(std::string val) { m_libName = val; }
+    void setLibName(const std::string& val) { m_libName = val;}
 };
 
 #endif

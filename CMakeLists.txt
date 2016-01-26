@@ -41,6 +41,8 @@ ENDIF(MSVC)
 
 add_executable (uwgen
     main.cpp
+    Core/UStartupArgs.h
+    Core/UStartupArgs.cpp
     Core/WrapperGenerator/UWrapperGenerator.h
     Core/WrapperGenerator/UWrapperGeneratorVB6.h
     Core/WrapperGenerator/UWrapperGeneratorVB6.cpp

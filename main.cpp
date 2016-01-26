@@ -23,10 +23,10 @@
 #include "clang/Parse/Parser.h"
 #include "clang/Parse/ParseAST.h"
 
-#include "Core/UASTConsumer.h"
+#include "Core/UStartupArgs.h"
 #include "Core/WrapperGenerator/UWrapperGeneratorVB6.h"
+#include "Core/UASTConsumer.h"
 
-#include <boost/program_options.hpp>
 
 int main(int argc, const char* argv[]) 
 {
@@ -40,30 +40,17 @@ int main(int argc, const char* argv[])
     using clang::Parser;
     using clang::DiagnosticOptions;
     using clang::TextDiagnosticPrinter;
-    namespace po = boost::program_options;
     
-    po::positional_options_description p;
-    p.add("input-file", -1);
-    po::options_description desc("Allowed options");
-    desc.add_options()
-        ("help", "produce help message")
-        ("input-file", po::value<std::string>(), "The input header/cpp file")
-        ("out-file,o", po::value<std::string>()->default_value("out.bas"), "The output file (default is out.*)")
-        ("include-path,I", po::value< std::vector<std::string> >(), "Additional include paths");
+    UStartupArgs startupArgs(argc, argv);
+    if (!startupArgs.IsValid())
+        return EXIT_FAILURE;
 
-    po::variables_map vm;
-    po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
-    po::notify(vm);
-
-    if (vm.count("help") || !vm.count("input-file")) {
-        std::cout << desc << "\n";
-        return 1;
-    }
-   
     // Create compiler
     CompilerInstance ci;
     DiagnosticOptions diagnosticOptions;
     ci.createDiagnostics();
+
+    
 
     // Set c++ language
     clang::LangOptions& langOpts = ci.getLangOpts();
@@ -79,9 +66,15 @@ int main(int argc, const char* argv[])
     
     // Add additional include paths:
     clang::HeaderSearchOptions& headerSearchOpts = ci.getHeaderSearchOpts();
-    for (const std::string& nextPath : vm["include-path"].as<std::vector<std::string>>()) {
+    if (headerSearchOpts.ResourceDir.empty()) {
+        headerSearchOpts.ResourceDir = startupArgs.ResourcePath;
+    }
+    headerSearchOpts.AddPath(headerSearchOpts.ResourceDir + "/include", clang::frontend::IncludeDirGroup::ExternCSystem, false, true);
+    for (const std::string& nextPath : startupArgs.IncludePaths) {
         headerSearchOpts.AddPath(nextPath, clang::frontend::IncludeDirGroup::Angled, false, true);
     }
+    headerSearchOpts.Verbose = true;
+   
 
     std::shared_ptr<clang::TargetOptions> pto = std::make_shared<clang::TargetOptions>();
     pto->Triple = llvm::sys::getDefaultTargetTriple();
@@ -92,25 +85,32 @@ int main(int argc, const char* argv[])
     ci.createSourceManager(ci.getFileManager());
     ci.createPreprocessor(clang::TU_Complete);
     ci.getPreprocessorOpts().UsePredefines = false;
+    const FileEntry *pFile = ci.getFileManager().getFile(argv[1]);
+    ci.getSourceManager().setMainFileID(ci.getSourceManager().createFileID(pFile, clang::SourceLocation(), clang::SrcMgr::C_User));
+
 
     // AST and Wrapper:
-    UWrapperGeneratorVB6 vb6Generator(vm["out-file"].as<std::string>());
-    vb6Generator.setLibName("example_library");
+    // Add compiler instance: ci
+    UWrapperGeneratorVB6 vb6Generator(startupArgs.OutputFile, startupArgs.VB6_IgnoreUnsigned);
+    vb6Generator.setLibName(startupArgs.LibraryName);
     ci.setASTConsumer(llvm::make_unique<UASTConsumer>(&vb6Generator));
     ci.createASTContext();
     if (!vb6Generator.IsReady()) {
-        std::cerr << "Failed to create VB6 generator!" << std::endl;
+        std::cerr << "Failed to create VB6 generator!" << std::endl
+            << "Outputfile: " << startupArgs.OutputFile << std::endl
+            << "Libraryname: " << startupArgs.LibraryName << std::endl
+            ;
+        
+
         return EXIT_FAILURE;
     }
     vb6Generator.Start();
 
-    const FileEntry *pFile = ci.getFileManager().getFile(argv[1]);
-    ci.getSourceManager().setMainFileID(ci.getSourceManager().createFileID(pFile, clang::SourceLocation(), clang::SrcMgr::C_User));
     
     
     ci.getDiagnosticClient().BeginSourceFile(ci.getLangOpts(),
         &ci.getPreprocessor());
-    clang::ParseAST(ci.getPreprocessor(), &ci.getASTConsumer(), ci.getASTContext(), true, clang::TU_Complete, nullptr, true);
+    clang::ParseAST(ci.getPreprocessor(), &ci.getASTConsumer(), ci.getASTContext(), false, clang::TU_Complete, nullptr, true);
     ci.getDiagnosticClient().EndSourceFile();
 
     vb6Generator.End();
