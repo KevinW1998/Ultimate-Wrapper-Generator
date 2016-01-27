@@ -132,5 +132,8 @@ const char* UWrapperGeneratorVB6::ClangTypeToVB6(const clang::QualType& type, bo
         }
         return "Long";
     }
+    else if (type->getTypeClass() == clang::Type::Typedef) {
+        return ClangTypeToVB6(type->getAs<clang::TypedefType>()->desugar(), canHaveRef, isRef);
+    }
     return "<Unsupported>";
 }
