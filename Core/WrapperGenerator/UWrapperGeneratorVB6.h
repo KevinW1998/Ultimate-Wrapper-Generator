@@ -35,8 +35,8 @@ public:
     virtual void NextEnumDecl(clang::EnumDecl* enumDecl, const std::string& name) override final;
 
 private:
-    const char* ClangBuiltinTypeToVB6(const clang::BuiltinType* type);
-    const char* ClangTypeToVB6(const clang::QualType& type, bool canHaveRef, bool* isRef = 0);
+    std::string ClangBuiltinTypeToVB6(const clang::BuiltinType* type);
+    std::string ClangTypeToVB6(const clang::QualType& type, bool canHaveRef, bool* isRef = 0);
 };
 
 #endif

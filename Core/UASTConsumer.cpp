@@ -5,13 +5,9 @@
 
 bool UASTConsumer::HandleTopLevelDecl(clang::DeclGroupRef d)
 {
-    // d->getSingleDecl()->getLocation().
     // Go through the top items
     for (const auto& nextDecl : d) {
-        // std::cout << "Next top Decl: " << nextDecl->getDeclKindName() << std::endl;
-
-
-        // Now look into those, which get linked aka. 'extern "C"'.
+        clang::SourceManager& mgr = nextDecl->getASTContext().getSourceManager();
         if (nextDecl->getKind() == clang::Decl::LinkageSpec) {
             clang::LinkageSpecDecl* linkGroup = llvm::cast<clang::LinkageSpecDecl>(nextDecl);
             assert(linkGroup, "linkGroup must not be null!");
@@ -19,7 +15,8 @@ bool UASTConsumer::HandleTopLevelDecl(clang::DeclGroupRef d)
             // Now go through all items, which are in extern "C"
             for (const auto& nextLinkDecl : linkGroup->decls()) 
             {
-                // std::cout << "Next link Decl: " << nextLinkDecl->getDeclKindName() << std::endl;
+                if(mgr.getFileID(nextLinkDecl->getSourceRange().getBegin()) != mgr.getMainFileID())
+                    continue;
                 switch (nextLinkDecl->getKind()) {
                 case clang::Decl::Kind::Function:
                 {
@@ -27,6 +24,7 @@ bool UASTConsumer::HandleTopLevelDecl(clang::DeclGroupRef d)
                     assert("nextLinkFuncDecl must not be null!");
                     // Pass linked function to the generator
                     m_generator->NextFuncDecl(nextLinkFuncDecl);
+                    
                     break;
                 }
                 case clang::Decl::Kind::Enum:
@@ -42,8 +40,7 @@ bool UASTConsumer::HandleTopLevelDecl(clang::DeclGroupRef d)
                 case clang::Decl::Kind::Typedef:
                 {
                     clang::TypedefDecl* nextLinkTypedefDecl = llvm::cast<clang::TypedefDecl>(nextLinkDecl);
-                    nextLinkDecl->dump();
-
+                    
                     clang::QualType underlyingType = nextLinkTypedefDecl->getUnderlyingType();
                     const clang::ElaboratedType* elaboratedType = underlyingType->getAs<clang::ElaboratedType>();
                     if (elaboratedType) {
@@ -56,8 +53,6 @@ bool UASTConsumer::HandleTopLevelDecl(clang::DeclGroupRef d)
                         break;
                     }
                     
-                    // underlyingType->dump();
-
                     break;
                 }
                 default:

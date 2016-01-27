@@ -19,17 +19,17 @@ void UWrapperGeneratorVB6::End()
 
 void UWrapperGeneratorVB6::NextFuncDecl(clang::FunctionDecl* func)
 {
+    UWrapperGenerator::NextFuncDecl(func);
+
     clang::QualType funcReturnType = func->getReturnType();
     bool isVoidReturn = funcReturnType->isVoidType();
     std::string vb6WrapperLine = "Public Declare ";
     vb6WrapperLine += (isVoidReturn ? "Sub " : "Function ");
     vb6WrapperLine += func->getName();
     vb6WrapperLine += " Lib \"" + m_libName + "\" (";
-
-    
     for (clang::ParmVarDecl* nextParameter : func->parameters()) {
         bool isRef = false;
-        const char* vb6Type = ClangTypeToVB6(nextParameter->getType(), true, &isRef);
+        std::string vb6Type = ClangTypeToVB6(nextParameter->getType(), true, &isRef);
         vb6WrapperLine += (isRef ? "ByRef " : "ByVal ");
         vb6WrapperLine += nextParameter->getName().data();
         vb6WrapperLine += " As ";
@@ -59,6 +59,7 @@ void UWrapperGeneratorVB6::NextEnumDecl(clang::EnumDecl* enumDecl)
 
 void UWrapperGeneratorVB6::NextEnumDecl(clang::EnumDecl* enumDecl, const std::string& name)
 {
+    UWrapperGenerator::NextEnumDecl(enumDecl, name);    
     std::string vb6WrapperLine = "Public Enum ";
     vb6WrapperLine += name;
     vb6WrapperLine += "\n";
@@ -74,7 +75,7 @@ void UWrapperGeneratorVB6::NextEnumDecl(clang::EnumDecl* enumDecl, const std::st
     m_enumStrDataBuf += vb6WrapperLine + "\n";
 }
 
-const char* UWrapperGeneratorVB6::ClangBuiltinTypeToVB6(const clang::BuiltinType* type)
+std::string UWrapperGeneratorVB6::ClangBuiltinTypeToVB6(const clang::BuiltinType* type)
 {
     switch (type->getKind()) {
     case clang::BuiltinType::SChar:
@@ -104,7 +105,7 @@ const char* UWrapperGeneratorVB6::ClangBuiltinTypeToVB6(const clang::BuiltinType
     }
 }
 
-const char* UWrapperGeneratorVB6::ClangTypeToVB6(const clang::QualType& type, bool canHaveRef, bool* isRef /*= 0*/)
+std::string UWrapperGeneratorVB6::ClangTypeToVB6(const clang::QualType& type, bool canHaveRef, bool* isRef /*= 0*/)
 {
     if (isRef)
         *isRef = false;
@@ -134,6 +135,15 @@ const char* UWrapperGeneratorVB6::ClangTypeToVB6(const clang::QualType& type, bo
     }
     else if (type->getTypeClass() == clang::Type::Typedef) {
         return ClangTypeToVB6(type->getAs<clang::TypedefType>()->desugar(), canHaveRef, isRef);
+    }
+    else if (type->getTypeClass() == clang::Type::Elaborated) {
+        return ClangTypeToVB6(type->getAs<clang::ElaboratedType>()->desugar(), canHaveRef, isRef);
+    }
+    else if (type->getTypeClass() == clang::Type::Enum) {
+        const clang::EnumType* enumType = type->getAs<clang::EnumType>();
+        if (m_parsedEnumDecls.find(enumType->getDecl()) != m_parsedEnumDecls.end()) {
+            return clang::QualType(enumType, 0).getAsString();
+        }
     }
     return "<Unsupported>";
 }
