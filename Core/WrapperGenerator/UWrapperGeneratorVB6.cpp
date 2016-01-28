@@ -13,7 +13,9 @@ void UWrapperGeneratorVB6::Start()
 
 void UWrapperGeneratorVB6::End()
 {
-    m_dataStream << m_enumStrDataBuf << m_funcStrDataBuf << std::endl;
+    m_dataStream << m_enumStrDataBuf 
+        << m_typeStrDataBuf
+        << m_funcStrDataBuf << std::endl;
     m_dataStream.close();
 }
 
@@ -75,6 +77,28 @@ void UWrapperGeneratorVB6::NextEnumDecl(clang::EnumDecl* enumDecl, const std::st
     m_enumStrDataBuf += vb6WrapperLine + "\n";
 }
 
+void UWrapperGeneratorVB6::NextCXXRecordDecl(clang::CXXRecordDecl* cxx)
+{
+    std::string vb6WrapperLine = "Public Type ";
+    vb6WrapperLine += cxx->getName().data();
+    vb6WrapperLine += "\n";
+    int i = 0;
+    for (clang::FieldDecl* nextField : cxx->fields()) {
+        i++;
+        vb6WrapperLine += "\t";
+        vb6WrapperLine += nextField->getName();
+        vb6WrapperLine += " As ";
+        vb6WrapperLine += ClangTypeToVB6(nextField->getType(), false);
+        vb6WrapperLine += "\n";
+    }
+    vb6WrapperLine += "End Type\n";
+    // Only add, if the struct has variables
+    if (i > 0) {
+        m_typeStrDataBuf += vb6WrapperLine + "\n";
+        UWrapperGenerator::NextCXXRecordDecl(cxx);
+    }
+}
+
 std::string UWrapperGeneratorVB6::ClangBuiltinTypeToVB6(const clang::BuiltinType* type)
 {
     switch (type->getKind()) {
@@ -131,6 +155,13 @@ std::string UWrapperGeneratorVB6::ClangTypeToVB6(const clang::QualType& type, bo
                 }
             }
         }
+        pointerType->dump();
+        std::string conv = ClangTypeToVB6(pointeeType, false);
+        if (canHaveRef) {
+            if (isRef)
+                *isRef = true;
+            return conv;
+        }
         return "Long";
     }
     else if (type->getTypeClass() == clang::Type::Typedef) {
@@ -144,6 +175,11 @@ std::string UWrapperGeneratorVB6::ClangTypeToVB6(const clang::QualType& type, bo
         if (m_parsedEnumDecls.find(enumType->getDecl()) != m_parsedEnumDecls.end()) {
             return clang::QualType(enumType, 0).getAsString();
         }
+    }
+    else if (type->getTypeClass() == clang::Type::Record) {
+        const clang::RecordType* recType = type->getAs<clang::RecordType>();
+        if (m_parsedCXXRecordDecls.find(recType->getDecl()) != m_parsedCXXRecordDecls.end())
+            return recType->getDecl()->getNameAsString();
     }
     return "<Unsupported>";
 }

@@ -10,6 +10,7 @@ private:
     std::ofstream m_dataStream;
     std::string m_enumStrDataBuf;
     std::string m_funcStrDataBuf;
+    std::string m_typeStrDataBuf;
 
     bool m_ignoreUnsigned;
     
@@ -19,6 +20,7 @@ public:
         m_dataStream((basFile.find("*") == basFile.length() - 1 ? basFile.substr(0, basFile.length() - 1) + "bas" : basFile), std::ios::out | std::ios::binary),
         m_enumStrDataBuf(""),
         m_funcStrDataBuf(""),
+        m_typeStrDataBuf(""),
         m_ignoreUnsigned(ignoreUnsigned)
     {
     
@@ -33,6 +35,7 @@ public:
     virtual void NextFuncDecl(clang::FunctionDecl* func) override final;
     virtual void NextEnumDecl(clang::EnumDecl* enumDecl) override final;
     virtual void NextEnumDecl(clang::EnumDecl* enumDecl, const std::string& name) override final;
+    virtual void NextCXXRecordDecl(clang::CXXRecordDecl* cxx) override final;
 
 private:
     std::string ClangBuiltinTypeToVB6(const clang::BuiltinType* type);

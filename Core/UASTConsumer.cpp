@@ -55,6 +55,12 @@ bool UASTConsumer::HandleTopLevelDecl(clang::DeclGroupRef d)
                     
                     break;
                 }
+                case clang::Decl::Kind::CXXRecord:
+                {
+                    clang::CXXRecordDecl* nextCXXRecord = llvm::cast<clang::CXXRecordDecl>(nextLinkDecl);
+                    nextCXXRecord->dump();
+                    m_generator->NextCXXRecordDecl(nextCXXRecord);
+                }
                 default:
                     break;
                 }
