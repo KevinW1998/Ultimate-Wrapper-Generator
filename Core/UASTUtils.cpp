@@ -23,6 +23,21 @@ const clang::Type* UASTUtils::TypedefUtils::ResolveType(const clang::TypedefType
     return rawType;
 }
 
+std::string UASTUtils::TypedefUtils::FindName(const clang::Decl* decl)
+{
+    const clang::DeclContext* context = decl->getDeclContext();
+    for (const auto& nextDecl : context->decls()) 
+    {
+        if (nextDecl->getKind() == clang::Decl::Kind::Typedef) {
+            clang::TypedefDecl* nextTypedefDecl = llvm::cast<clang::TypedefDecl>(nextDecl);
+            const clang::Type* rawType = HardResolveType(nextTypedefDecl->getTypeForDecl());
+
+        }
+    }
+
+    return "";
+}
+
 const clang::Type* UASTUtils::HardResolveType(const clang::Type* type)
 {
     switch (type->getTypeClass()) {
@@ -35,4 +50,13 @@ const clang::Type* UASTUtils::HardResolveType(const clang::Type* type)
     default:
         return type;
     }
+}
+
+bool UASTUtils::EnumUtils::FindEnumName(const clang::EnumDecl* enumDecl, std::string& outName)
+{
+    outName = enumDecl->getName();
+    if (outName.empty()) {
+        
+    }
+    return true;
 }

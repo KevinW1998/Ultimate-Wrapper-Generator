@@ -6,14 +6,14 @@ void UWrapperGenerator::NextFuncDecl(clang::FunctionDecl* func)
 {
     if (UASTUtils::FuncDeclUtils::HasDLLExport(func)) {
         std::cout << "===" << std::endl;
-        func->dump();
+        // func->dump();
         m_collectedFuncs.insert(func);
         for (clang::ParmVarDecl* nextParameter : func->parameters()) {
             // First get qualified type
             clang::QualType nextParamTypeObj = nextParameter->getType();
             // Get raw unqualified type:
             const clang::Type* nextRawParamType = UASTUtils::HardResolveType(nextParamTypeObj.getTypePtr());
-            nextRawParamType->dump();
+            // nextRawParamType->dump();
             
             using clsType = clang::Type::TypeClass;
             switch (nextRawParamType->getTypeClass()) 

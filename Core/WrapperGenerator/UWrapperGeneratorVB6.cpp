@@ -60,8 +60,11 @@ void UWrapperGeneratorVB6::ProcessEnumDecl(clang::EnumDecl* enumDecl)
 
 void UWrapperGeneratorVB6::ProcessEnumDecl(clang::EnumDecl* enumDecl, const std::string& name)
 {
+    std::string enumName = name;
+    UASTUtils::EnumUtils::FindEnumName(enumDecl, enumName);
+
     std::string vb6WrapperLine = "Public Enum ";
-    vb6WrapperLine += name;
+    vb6WrapperLine += enumName;
     vb6WrapperLine += "\n";
     for (clang::EnumConstantDecl* nextConst : enumDecl->enumerators()) {
         vb6WrapperLine += "\t";

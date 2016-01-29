@@ -13,7 +13,14 @@ namespace UASTUtils
     }
     namespace TypedefUtils
     {
+        // Will remove all qualifier of a type
         const clang::Type* ResolveType(const clang::TypedefType* type);
+        // Finds the first typedef-name on an anonymous decl.
+        std::string FindName(const clang::Decl* decl);
+    }
+    namespace EnumUtils
+    {
+        bool FindEnumName(const clang::EnumDecl* enumDecl, std::string& outName);
     }
 
     template<class T>
