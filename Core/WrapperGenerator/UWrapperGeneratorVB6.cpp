@@ -30,7 +30,7 @@ void UWrapperGeneratorVB6::ProcessFuncDecl(clang::FunctionDecl* func)
     vb6WrapperLine += " Lib \"" + m_libName + "\" (";
     for (clang::ParmVarDecl* nextParameter : func->parameters()) {
         bool isRef = false;
-        std::string vb6Type = ClangTypeToVB6(nextParameter->getType(), true, &isRef);
+        std::string vb6Type = ClangTypeToVB6(nextParameter->getType(), nullptr, true, &isRef);
         vb6WrapperLine += (isRef ? "ByRef " : "ByVal ");
         vb6WrapperLine += nextParameter->getName().data();
         vb6WrapperLine += " As ";
@@ -43,7 +43,7 @@ void UWrapperGeneratorVB6::ProcessFuncDecl(clang::FunctionDecl* func)
 
     if (!isVoidReturn) {
         vb6WrapperLine += ") As ";
-        vb6WrapperLine += ClangTypeToVB6(funcReturnType, false);
+        vb6WrapperLine += ClangTypeToVB6(funcReturnType, nullptr, false);
     }
     else 
     {
@@ -77,20 +77,41 @@ void UWrapperGeneratorVB6::ProcessEnumDecl(clang::EnumDecl* enumDecl, const std:
 
 void UWrapperGeneratorVB6::ProcessRecordDecl(clang::RecordDecl* record)
 {
-    if (record->isUnion())
+    if (record->isUnion()) {
+        m_collectedRecords.erase(record);
         return;
-    std::string vb6WrapperLine = "Public Type ";
+    }
+    
+    std::string vb6WrapperLine = "";
+    if (record->getDefinition()) {
+        clang::TypeInfo recordTypeInfo = record->getASTContext().getTypeInfo(record->getTypeForDecl());
+        vb6WrapperLine += "' Size = " + std::to_string(recordTypeInfo.Width / 8) + "\n";
+    }
+    vb6WrapperLine += "Public Type ";
     vb6WrapperLine += record->getName().data();
     vb6WrapperLine += "\n";
-    int i = 0;
     for (clang::FieldDecl* nextField : record->fields()) {
         if(nextField->isFunctionOrFunctionTemplate())
             continue;
-        i++;
+        
+        bool convSuccess = false;
+        std::string possibleType = ClangTypeToVB6(nextField->getType(), &convSuccess, false);
+
         vb6WrapperLine += "\t";
         vb6WrapperLine += nextField->getName();
         vb6WrapperLine += " As ";
-        vb6WrapperLine += ClangTypeToVB6(nextField->getType(), false);
+        if (convSuccess)
+        {
+            vb6WrapperLine += possibleType;
+        }
+        else
+        {
+            clang::TypeInfo typeInfoOfUnsupported = nextField->getASTContext().getTypeInfo(nextField->getType());
+            int byteWidthOfUnsupported = typeInfoOfUnsupported.Width / 8;
+            int byteAlignOfUnsupported = typeInfoOfUnsupported.Align / 8;
+            vb6WrapperLine += "Byte(" + std::to_string(byteWidthOfUnsupported) + ") 'Unsupported, filling with Byte-Array (size="
+                + std::to_string(byteWidthOfUnsupported) + ", align=" + std::to_string(byteAlignOfUnsupported) + ")";
+        }
         vb6WrapperLine += "\n";
     }
     vb6WrapperLine += "End Type\n";
@@ -109,8 +130,10 @@ void UWrapperGeneratorVB6::Generate()
         ProcessRecordDecl(nextDecl);
 }
 
-std::string UWrapperGeneratorVB6::ClangBuiltinTypeToVB6(const clang::BuiltinType* type)
+std::string UWrapperGeneratorVB6::ClangBuiltinTypeToVB6(const clang::BuiltinType* type, bool* success /*= 0*/)
 {
+    if (success)
+        *success = true;
     switch (type->getKind()) {
     case clang::BuiltinType::SChar:
     case clang::BuiltinType::Char_S:
@@ -134,18 +157,20 @@ std::string UWrapperGeneratorVB6::ClangBuiltinTypeToVB6(const clang::BuiltinType
                     break;
                 }
             }
+            if (success)
+                *success = false;
             return "<Unsupported>";
         }
     }
 }
 
-std::string UWrapperGeneratorVB6::ClangTypeToVB6(const clang::QualType& type, bool canHaveRef, bool* isRef /*= 0*/)
+std::string UWrapperGeneratorVB6::ClangTypeToVB6(const clang::QualType& type, bool* success, bool canHaveRef, bool* isRef /*= 0*/)
 {
     if (isRef)
         *isRef = false;
     if (type->getTypeClass() == clang::Type::Builtin) {
         const clang::BuiltinType* builtInType = type->getAs<clang::BuiltinType>();
-        return ClangBuiltinTypeToVB6(builtInType);
+        return ClangBuiltinTypeToVB6(builtInType, success);
     }
     else if (type->getTypeClass() == clang::Type::Pointer) {
         const clang::PointerType* pointerType = type->getAs<clang::PointerType>();
@@ -161,11 +186,11 @@ std::string UWrapperGeneratorVB6::ClangTypeToVB6(const clang::QualType& type, bo
                 if (canHaveRef) {
                     if (isRef)
                         *isRef = true;
-                    return ClangBuiltinTypeToVB6(pointeeTypeBuiltin);
+                    return ClangBuiltinTypeToVB6(pointeeTypeBuiltin, success);
                 }
             }
         }
-        std::string conv = ClangTypeToVB6(pointeeType, false);
+        std::string conv = ClangTypeToVB6(pointeeType, success, false);
         if (canHaveRef) {
             if (isRef)
                 *isRef = true;
@@ -174,10 +199,10 @@ std::string UWrapperGeneratorVB6::ClangTypeToVB6(const clang::QualType& type, bo
         return "Long";
     }
     else if (type->getTypeClass() == clang::Type::Typedef) {
-        return ClangTypeToVB6(type->getAs<clang::TypedefType>()->desugar(), canHaveRef, isRef);
+        return ClangTypeToVB6(type->getAs<clang::TypedefType>()->desugar(), success, canHaveRef, isRef);
     }
     else if (type->getTypeClass() == clang::Type::Elaborated) {
-        return ClangTypeToVB6(type->getAs<clang::ElaboratedType>()->desugar(), canHaveRef, isRef);
+        return ClangTypeToVB6(type->getAs<clang::ElaboratedType>()->desugar(), success, canHaveRef, isRef);
     }
     else if (type->getTypeClass() == clang::Type::Enum) {
         const clang::EnumType* enumType = type->getAs<clang::EnumType>();
@@ -190,5 +215,7 @@ std::string UWrapperGeneratorVB6::ClangTypeToVB6(const clang::QualType& type, bo
         if (m_parsedCXXRecordDecls.find(recType->getDecl()) != m_parsedCXXRecordDecls.end())
             return recType->getDecl()->getNameAsString();
     }
+    if (success)
+        *success = false;
     return "<Unsupported>";
 }

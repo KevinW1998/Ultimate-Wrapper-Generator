@@ -32,16 +32,16 @@ public:
     virtual void End() override final;
 
     
-    void ProcessFuncDecl(clang::FunctionDecl* func);
-    void ProcessEnumDecl(clang::EnumDecl* enumDecl);
-    void ProcessEnumDecl(clang::EnumDecl* enumDecl, const std::string& name);
-    void ProcessRecordDecl(clang::RecordDecl* record);
+    void ProcessFuncDecl(clang::FunctionDecl* func); //< Process and validate (remove from list if needed) functions
+    void ProcessEnumDecl(clang::EnumDecl* enumDecl); //< Process and validate (remove from list if needed) functions
+    void ProcessEnumDecl(clang::EnumDecl* enumDecl, const std::string& name); //< Process and validate (remove from list if needed) functions
+    void ProcessRecordDecl(clang::RecordDecl* record); //< Process and validate (remove from list if needed) functions
 
     virtual void Generate();
 
 private:
-    std::string ClangBuiltinTypeToVB6(const clang::BuiltinType* type);
-    std::string ClangTypeToVB6(const clang::QualType& type, bool canHaveRef, bool* isRef = 0);
+    std::string ClangBuiltinTypeToVB6(const clang::BuiltinType* type, bool* success = 0);
+    std::string ClangTypeToVB6(const clang::QualType& type, bool* success, bool canHaveRef, bool* isRef = 0);
 };
 
 #endif
