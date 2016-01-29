@@ -19,10 +19,9 @@ void UWrapperGeneratorVB6::End()
     m_dataStream.close();
 }
 
-void UWrapperGeneratorVB6::NextFuncDecl(clang::FunctionDecl* func)
+void UWrapperGeneratorVB6::ProcessFuncDecl(clang::FunctionDecl* func)
 {
-    UWrapperGenerator::NextFuncDecl(func);
-
+    // Dead code
     clang::QualType funcReturnType = func->getReturnType();
     bool isVoidReturn = funcReturnType->isVoidType();
     std::string vb6WrapperLine = "Public Declare ";
@@ -54,14 +53,13 @@ void UWrapperGeneratorVB6::NextFuncDecl(clang::FunctionDecl* func)
     m_funcStrDataBuf += vb6WrapperLine + "\n";
 }
 
-void UWrapperGeneratorVB6::NextEnumDecl(clang::EnumDecl* enumDecl)
+void UWrapperGeneratorVB6::ProcessEnumDecl(clang::EnumDecl* enumDecl)
 {
-    NextEnumDecl(enumDecl, enumDecl->getName());
+    ProcessEnumDecl(enumDecl, enumDecl->getName());
 }
 
-void UWrapperGeneratorVB6::NextEnumDecl(clang::EnumDecl* enumDecl, const std::string& name)
+void UWrapperGeneratorVB6::ProcessEnumDecl(clang::EnumDecl* enumDecl, const std::string& name)
 {
-    UWrapperGenerator::NextEnumDecl(enumDecl, name);    
     std::string vb6WrapperLine = "Public Enum ";
     vb6WrapperLine += name;
     vb6WrapperLine += "\n";
@@ -77,13 +75,17 @@ void UWrapperGeneratorVB6::NextEnumDecl(clang::EnumDecl* enumDecl, const std::st
     m_enumStrDataBuf += vb6WrapperLine + "\n";
 }
 
-void UWrapperGeneratorVB6::NextCXXRecordDecl(clang::CXXRecordDecl* cxx)
+void UWrapperGeneratorVB6::ProcessRecordDecl(clang::RecordDecl* record)
 {
+    if (record->isUnion())
+        return;
     std::string vb6WrapperLine = "Public Type ";
-    vb6WrapperLine += cxx->getName().data();
+    vb6WrapperLine += record->getName().data();
     vb6WrapperLine += "\n";
     int i = 0;
-    for (clang::FieldDecl* nextField : cxx->fields()) {
+    for (clang::FieldDecl* nextField : record->fields()) {
+        if(nextField->isFunctionOrFunctionTemplate())
+            continue;
         i++;
         vb6WrapperLine += "\t";
         vb6WrapperLine += nextField->getName();
@@ -92,11 +94,19 @@ void UWrapperGeneratorVB6::NextCXXRecordDecl(clang::CXXRecordDecl* cxx)
         vb6WrapperLine += "\n";
     }
     vb6WrapperLine += "End Type\n";
-    // Only add, if the struct has variables
-    if (i > 0) {
-        m_typeStrDataBuf += vb6WrapperLine + "\n";
-        UWrapperGenerator::NextCXXRecordDecl(cxx);
-    }
+
+    m_typeStrDataBuf += vb6WrapperLine + "\n";
+}
+
+void UWrapperGeneratorVB6::Generate()
+{
+    // FIXME: DRY Fail
+    for (const auto& nextDecl : m_collectedEnums) 
+        ProcessEnumDecl(nextDecl);
+    for (const auto& nextDecl : m_collectedFuncs)
+        ProcessFuncDecl(nextDecl);
+    for (const auto& nextDecl : m_collectedRecords)
+        ProcessRecordDecl(nextDecl);
 }
 
 std::string UWrapperGeneratorVB6::ClangBuiltinTypeToVB6(const clang::BuiltinType* type)
@@ -155,7 +165,6 @@ std::string UWrapperGeneratorVB6::ClangTypeToVB6(const clang::QualType& type, bo
                 }
             }
         }
-        pointerType->dump();
         std::string conv = ClangTypeToVB6(pointeeType, false);
         if (canHaveRef) {
             if (isRef)

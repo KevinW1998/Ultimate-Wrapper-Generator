@@ -32,10 +32,12 @@ public:
     virtual void End() override final;
 
     
-    virtual void NextFuncDecl(clang::FunctionDecl* func) override final;
-    virtual void NextEnumDecl(clang::EnumDecl* enumDecl) override final;
-    virtual void NextEnumDecl(clang::EnumDecl* enumDecl, const std::string& name) override final;
-    virtual void NextCXXRecordDecl(clang::CXXRecordDecl* cxx) override final;
+    void ProcessFuncDecl(clang::FunctionDecl* func);
+    void ProcessEnumDecl(clang::EnumDecl* enumDecl);
+    void ProcessEnumDecl(clang::EnumDecl* enumDecl, const std::string& name);
+    void ProcessRecordDecl(clang::RecordDecl* record);
+
+    virtual void Generate();
 
 private:
     std::string ClangBuiltinTypeToVB6(const clang::BuiltinType* type);

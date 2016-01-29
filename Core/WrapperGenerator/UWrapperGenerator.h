@@ -6,7 +6,10 @@
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
 
+#include "../UASTUtils.h"
+
 #include <unordered_set>
+#include <vector>
 
 class UWrapperGenerator {
 protected:
@@ -14,7 +17,9 @@ protected:
     std::unordered_set<clang::EnumDecl*> m_parsedEnumDecls;
     std::unordered_set<clang::RecordDecl*> m_parsedCXXRecordDecls;
 
-
+    std::set<clang::FunctionDecl*> m_collectedFuncs;
+    std::set<clang::EnumDecl*> m_collectedEnums;
+    std::set<clang::RecordDecl*> m_collectedRecords;
 public:
     UWrapperGenerator() {}
     virtual ~UWrapperGenerator() {}
@@ -23,10 +28,9 @@ public:
     virtual void Start() {} //< Code when the generator is starting!
     virtual void End() {} //< Code when the generator is starting!
 
-    virtual void NextFuncDecl(clang::FunctionDecl* /*func*/) {}
-    virtual void NextEnumDecl(clang::EnumDecl* enumDecl) { m_parsedEnumDecls.insert(enumDecl); }
-    virtual void NextEnumDecl(clang::EnumDecl* enumDecl, const std::string& /*name*/) { m_parsedEnumDecls.insert(enumDecl); }
-    virtual void NextCXXRecordDecl(clang::CXXRecordDecl* cxx) {  m_parsedCXXRecordDecls.insert(cxx); }
+    virtual void NextFuncDecl(clang::FunctionDecl* func);
+    
+    virtual void Generate() {}
 
     std::string getLibName() const { return m_libName; }
     void setLibName(const std::string& val) { m_libName = val;}

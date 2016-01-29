@@ -19,55 +19,21 @@ bool UASTConsumer::HandleTopLevelDecl(clang::DeclGroupRef d)
                     continue;
                 switch (nextLinkDecl->getKind()) {
                 case clang::Decl::Kind::Function:
-                {
-                    clang::FunctionDecl* nextLinkFuncDecl = llvm::cast<clang::FunctionDecl>(nextLinkDecl);
-                    assert("nextLinkFuncDecl must not be null!");
-                    // Pass linked function to the generator
-                    m_generator->NextFuncDecl(nextLinkFuncDecl);
-                    
-                    break;
-                }
-                case clang::Decl::Kind::Enum:
-                {
-                    clang::EnumDecl* nextLinkEnumDecl = llvm::cast<clang::EnumDecl>(nextLinkDecl);
-                    if (nextLinkEnumDecl->getName().empty())
-                        break;
-                    assert("nextLinkEnumDecl must not be null!");
+                    {
+                        clang::FunctionDecl* nextLinkFuncDecl = llvm::cast<clang::FunctionDecl>(nextLinkDecl);
+                        assert("nextLinkFuncDecl must not be null!");
+                        // Pass linked function to the generator
+                        m_generator->NextFuncDecl(nextLinkFuncDecl);
 
-                    m_generator->NextEnumDecl(nextLinkEnumDecl);
-                    break;
-                }
-                case clang::Decl::Kind::Typedef:
-                {
-                    clang::TypedefDecl* nextLinkTypedefDecl = llvm::cast<clang::TypedefDecl>(nextLinkDecl);
-                    
-                    clang::QualType underlyingType = nextLinkTypedefDecl->getUnderlyingType();
-                    const clang::ElaboratedType* elaboratedType = underlyingType->getAs<clang::ElaboratedType>();
-                    if (elaboratedType) {
-                        clang::QualType desugaredType = elaboratedType->desugar();
-                        if (desugaredType->getTypeClass() == clang::Type::TypeClass::Enum) {
-                            clang::EnumDecl* possibleEnumDecl = llvm::cast<clang::EnumDecl>(desugaredType->getAsTagDecl());
-                            if (possibleEnumDecl)
-                                m_generator->NextEnumDecl(possibleEnumDecl, nextLinkTypedefDecl->getName());
-                        }
                         break;
                     }
-                    
-                    break;
-                }
-                case clang::Decl::Kind::CXXRecord:
-                {
-                    clang::CXXRecordDecl* nextCXXRecord = llvm::cast<clang::CXXRecordDecl>(nextLinkDecl);
-                    nextCXXRecord->dump();
-                    m_generator->NextCXXRecordDecl(nextCXXRecord);
-                }
-                default:
-                    break;
                 }
             }
 
         }
     }
+    // Now generate
+    m_generator->Generate();
     return true;
 }
     
