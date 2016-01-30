@@ -23,20 +23,7 @@ const clang::Type* UASTUtils::TypedefUtils::ResolveType(const clang::TypedefType
     return rawType;
 }
 
-std::string UASTUtils::TypedefUtils::FindName(const clang::Decl* decl)
-{
-    const clang::DeclContext* context = decl->getDeclContext();
-    for (const auto& nextDecl : context->decls()) 
-    {
-        if (nextDecl->getKind() == clang::Decl::Kind::Typedef) {
-            clang::TypedefDecl* nextTypedefDecl = llvm::cast<clang::TypedefDecl>(nextDecl);
-            const clang::Type* rawType = HardResolveType(nextTypedefDecl->getTypeForDecl());
 
-        }
-    }
-
-    return "";
-}
 
 const clang::Type* UASTUtils::HardResolveType(const clang::Type* type)
 {
@@ -52,11 +39,27 @@ const clang::Type* UASTUtils::HardResolveType(const clang::Type* type)
     }
 }
 
-bool UASTUtils::EnumUtils::FindEnumName(const clang::EnumDecl* enumDecl, std::string& outName)
+std::string UASTUtils::FindName(const clang::Decl* decl, bool* ok /*= 0*/)
 {
-    outName = enumDecl->getName();
-    if (outName.empty()) {
-        
+    // 1. Try to find name, if decl is a named decl
+    const clang::NamedDecl* namedDecl = llvm::cast_or_null<const clang::NamedDecl>(decl);
+    if (namedDecl && !namedDecl->getName().empty()) {
+        if (ok)
+            *ok = true;
+        return namedDecl->getName();
     }
-    return true;
+
+    // 2. If not, then try to find first typedef (only for record and enums)
+    const clang::TagDecl* possibleTagDecl = llvm::cast_or_null<const clang::TagDecl>(decl);
+    if (possibleTagDecl) {
+        clang::TypedefNameDecl* possibleTypedefDecl = possibleTagDecl->getTypedefNameForAnonDecl();
+        if (possibleTypedefDecl) {
+            if (ok)
+                *ok = true;
+            return possibleTypedefDecl->getName();
+        }
+    }
+    if(ok)
+        *ok = false;
+    return "";
 }

@@ -26,7 +26,7 @@ void UWrapperGeneratorVB6::ProcessFuncDecl(clang::FunctionDecl* func)
     bool isVoidReturn = funcReturnType->isVoidType();
     std::string vb6WrapperLine = "Public Declare ";
     vb6WrapperLine += (isVoidReturn ? "Sub " : "Function ");
-    vb6WrapperLine += func->getName();
+    vb6WrapperLine += UASTUtils::FindName(func);
     vb6WrapperLine += " Lib \"" + m_libName + "\" (";
     for (clang::ParmVarDecl* nextParameter : func->parameters()) {
         bool isRef = false;
@@ -60,11 +60,8 @@ void UWrapperGeneratorVB6::ProcessEnumDecl(clang::EnumDecl* enumDecl)
 
 void UWrapperGeneratorVB6::ProcessEnumDecl(clang::EnumDecl* enumDecl, const std::string& name)
 {
-    std::string enumName = name;
-    UASTUtils::EnumUtils::FindEnumName(enumDecl, enumName);
-
     std::string vb6WrapperLine = "Public Enum ";
-    vb6WrapperLine += enumName;
+    vb6WrapperLine += UASTUtils::FindName(enumDecl);
     vb6WrapperLine += "\n";
     for (clang::EnumConstantDecl* nextConst : enumDecl->enumerators()) {
         vb6WrapperLine += "\t";
@@ -85,13 +82,14 @@ void UWrapperGeneratorVB6::ProcessRecordDecl(clang::RecordDecl* record)
         return;
     }
     
+    
     std::string vb6WrapperLine = "";
     if (record->getDefinition()) {
         clang::TypeInfo recordTypeInfo = record->getASTContext().getTypeInfo(record->getTypeForDecl());
         vb6WrapperLine += "' Size = " + std::to_string(recordTypeInfo.Width / 8) + "\n";
     }
     vb6WrapperLine += "Public Type ";
-    vb6WrapperLine += record->getName().data();
+    vb6WrapperLine += UASTUtils::FindName(record);
     vb6WrapperLine += "\n";
     for (clang::FieldDecl* nextField : record->fields()) {
         if(nextField->isFunctionOrFunctionTemplate())
@@ -171,11 +169,16 @@ std::string UWrapperGeneratorVB6::ClangTypeToVB6(const clang::QualType& type, bo
 {
     if (isRef)
         *isRef = false;
-    if (type->getTypeClass() == clang::Type::Builtin) {
+
+    if (type->isFunctionPointerType()) {
+        return "Long";
+    }
+    else if (type->getTypeClass() == clang::Type::Builtin) {
         const clang::BuiltinType* builtInType = type->getAs<clang::BuiltinType>();
         return ClangBuiltinTypeToVB6(builtInType, success);
     }
     else if (type->getTypeClass() == clang::Type::Pointer) {
+        type->dump();
         const clang::PointerType* pointerType = type->getAs<clang::PointerType>();
         const clang::QualType& pointeeType = pointerType->getPointeeType();
         if (pointeeType->getTypeClass() == clang::Type::Builtin) {
@@ -184,7 +187,8 @@ std::string UWrapperGeneratorVB6::ClangTypeToVB6(const clang::QualType& type, bo
             case clang::BuiltinType::SChar:
             case clang::BuiltinType::Char_S:
             case clang::BuiltinType::UChar:
-            case clang::BuiltinType::Char_U: return "String";
+            case clang::BuiltinType::Char_U: return "String"; //char* --> String
+            case clang::BuiltinType::Void: return "Long"; // void* --> Long
             default:
                 if (canHaveRef) {
                     if (isRef)
@@ -207,15 +211,18 @@ std::string UWrapperGeneratorVB6::ClangTypeToVB6(const clang::QualType& type, bo
     else if (type->getTypeClass() == clang::Type::Elaborated) {
         return ClangTypeToVB6(type->getAs<clang::ElaboratedType>()->desugar(), success, canHaveRef, isRef);
     }
+    else if (type->getTypeClass() == clang::Type::Paren) {
+        return ClangTypeToVB6(type->getAs<clang::ParenType>()->desugar(), success, canHaveRef, isRef);
+    }
     else if (type->getTypeClass() == clang::Type::Enum) {
         const clang::EnumType* enumType = type->getAs<clang::EnumType>();
-        if (m_parsedEnumDecls.find(enumType->getDecl()) != m_parsedEnumDecls.end()) {
+        if (m_collectedEnums.find(enumType->getDecl()) != m_collectedEnums.end()) {
             return clang::QualType(enumType, 0).getAsString();
         }
     }
     else if (type->getTypeClass() == clang::Type::Record) {
         const clang::RecordType* recType = type->getAs<clang::RecordType>();
-        if (m_parsedCXXRecordDecls.find(recType->getDecl()) != m_parsedCXXRecordDecls.end())
+        if (m_collectedRecords.find(recType->getDecl()) != m_collectedRecords.end())
             return recType->getDecl()->getNameAsString();
     }
     if (success)
