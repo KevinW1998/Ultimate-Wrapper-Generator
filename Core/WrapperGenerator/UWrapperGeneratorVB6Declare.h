@@ -2,10 +2,9 @@
 #define UWrapperGeneratorVB6_H
 
 #include "UWrapperGenerator.h"
-#include "../UStartupArgs.h"
 #include <fstream>
 
-class UWrapperGeneratorVB6 : public UWrapperGenerator {
+class UWrapperGeneratorVB6Declare : public UWrapperGenerator {
 private:
     std::ofstream m_dataStream;
     std::string m_enumStrDataBuf;
@@ -15,17 +14,8 @@ private:
     bool m_ignoreUnsigned;
     
 public:
-    UWrapperGeneratorVB6(const std::string& basFile, bool ignoreUnsigned) : 
-        // Replace * with bas at the end, if it is given (i.e. test.* --> test.bas)
-        m_dataStream((basFile.find("*") == basFile.length() - 1 ? basFile.substr(0, basFile.length() - 1) + "bas" : basFile), std::ios::out | std::ios::binary),
-        m_enumStrDataBuf(""),
-        m_funcStrDataBuf(""),
-        m_typeStrDataBuf(""),
-        m_ignoreUnsigned(ignoreUnsigned)
-    {
-    
-    }
-    virtual ~UWrapperGeneratorVB6() {}
+    UWrapperGeneratorVB6Declare(const std::string& genPath, bool ignoreUnsigned);
+    virtual ~UWrapperGeneratorVB6Declare() {}
 
     virtual bool IsReady() override final { return m_dataStream.is_open(); };
     virtual void Start() override final;

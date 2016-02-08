@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <map>
 
 
 class UStartupArgs
@@ -17,11 +18,12 @@ public:
     inline bool IsValid() { return m_isValid; } //< Checks if the inputs are all valid
 
     std::string InputFile;
-    std::string OutputFile;
+    std::string OutputPath;
     std::vector<std::string> IncludePaths;
     std::string LibraryName;
     std::string ResourcePath;
     bool VB6_IgnoreUnsigned;
+    std::string Language;
 };
 
 #endif

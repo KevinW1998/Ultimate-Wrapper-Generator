@@ -2,6 +2,9 @@
 
 #include <boost/program_options.hpp>
 
+#define USTARTUPARGS_GETARG(varMap, fieldName, fieldObj) if ( varMap .count( fieldName )) \
+    fieldObj = varMap [ fieldName ].as< decltype(fieldObj) >()
+
 UStartupArgs::UStartupArgs(int argc, const char* argv[]) : 
     m_isValid(false),
 
@@ -16,8 +19,13 @@ UStartupArgs::UStartupArgs(int argc, const char* argv[]) :
     po::options_description generalDesc("General");
     generalDesc.add_options()
         ("help",                                                                        "Produce help message")
+        ("lang,l",          po::value<std::string>(),                                   "The language, for which the wrapper files should be written for.\n"
+                                                                                        "Valid options are:\n"
+                                                                                        "  vb6-declare\n"
+                                                                                        "  vb6-typelib\n"
+            )
         ("input-file",      po::value<std::string>(),                                   "The input header/cpp file")
-        ("out-file,o",      po::value<std::string>()->default_value("out.*"),           "The output file (default is out.*)")
+        ("output-path,o",   po::value<std::string>()->default_value("generated"),       "The folder, in which all generated files are written")
         ("include-path,I",  po::value< std::vector<std::string> >(),                    "Additional include paths. Depending on your installation you may have to also add the paths for mingw/g++ include files")
         ("library-name,L",  po::value<std::string>()->default_value("example_library"), "The name of the library. This may is needed for loading the target library")
         ("resource-path,R", po::value<std::string>()->default_value(""),                "The clang resource path. This may is needed for system include files! i.e.: lib/clang/3.9.0/")
@@ -38,29 +46,29 @@ UStartupArgs::UStartupArgs(int argc, const char* argv[]) :
             .positional(p).run(), vm);
         po::notify(vm);
     }
-    catch (std::logic_error& e) 
+    catch (const std::logic_error& e) 
     {
         std::cerr << "Error when parsing cmdline: " << e.what() << std::endl;
         return;
     }
     
     if (vm.count("help") || !vm.count("input-file")) {        
-        std::cout << generalDesc << std::endl;
+        std::cerr << generalDesc << std::endl;
+        return;
+    }
+    if (!vm.count("lang")) {
+        std::cerr << "Please provide the --lang option. See --help for more information." << std::endl;
         return;
     }
     
     m_isValid = true;
-    if(vm.count("include-path"))
-        IncludePaths = vm["include-path"].as<std::vector<std::string>>();
-    if(vm.count("input-file"))
-        InputFile = vm["input-file"].as<std::string>();
-    if(vm.count("out-file"))
-        OutputFile = vm["out-file"].as<std::string>();
-    if(vm.count("library-name"))
-        LibraryName = vm["library-name"].as<std::string>();
-    if(vm.count("resource-path"))
-        ResourcePath = vm["resource-path"].as<std::string>();
 
+    USTARTUPARGS_GETARG(vm, "lang", Language);
+    USTARTUPARGS_GETARG(vm, "include-path", IncludePaths);
+    USTARTUPARGS_GETARG(vm, "input-file", InputFile);
+    USTARTUPARGS_GETARG(vm, "output-path", OutputPath);
+    USTARTUPARGS_GETARG(vm, "library-name", LibraryName);
+    USTARTUPARGS_GETARG(vm, "resource-path", ResourcePath);
     VB6_IgnoreUnsigned = vm.count("vb6-ignore-unsigned") > 0;
 }
 

@@ -8,16 +8,33 @@ project (Ultimate-Wrapper-Generator)
 set(LLVM_BUILD_ROOT "" CACHE PATH "The llvm root build directory.")
 set(LLVM_SRC_ROOT "" CACHE PATH "The llvm source directory.")
 
+# Defines
+add_definitions(-DBOOST_ALL_NO_LIB)
+
+
+
+
+
+
+
+
+
+
+
+# =========== GENERATION PROCESS ============
+
 # Interal variables
 set(Boost_USE_STATIC_LIBS        ON) # only find static libs
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 
 # Find packages
-find_package(Boost 1.60 COMPONENTS filesystem program_options)
+find_package(Boost 1.60 COMPONENTS system filesystem program_options)
 if(NOT Boost_FOUND)
     message(SEND_ERROR "Boost 1.60 not found!")
 endif(NOT Boost_FOUND)
+
+message(STATUS ${Boost_LIBRARIES})
 
 # Includes
 if(Boost_FOUND)
@@ -47,25 +64,25 @@ add_executable (uwgen
     Core/UASTUtils.cpp
     Core/WrapperGenerator/UWrapperGenerator.h
     Core/WrapperGenerator/UWrapperGenerator.cpp
-    Core/WrapperGenerator/UWrapperGeneratorVB6.h
-    Core/WrapperGenerator/UWrapperGeneratorVB6.cpp
+    Core/WrapperGenerator/UWrapperGeneratorVB6Declare.h
+    Core/WrapperGenerator/UWrapperGeneratorVB6Declare.cpp
+    Core/WrapperGenerator/UWrapperGeneratorVB6IDL.h
+    Core/WrapperGenerator/UWrapperGeneratorVB6IDL.cpp
     Core/UASTConsumer.h
     Core/UASTConsumer.cpp
 )
 
 add_definitions(-std=c++11)
 
-# Clang dependencies.
 
+# Boost dependencies
 if(Boost_FOUND)
     target_link_libraries(uwgen ${Boost_LIBRARIES})
 endif()
 
-# Boost dependencies
-
-
 # LLVM and Clang dependencies.
 target_link_libraries(uwgen
+    # Clang
     clangFrontend
     clangSerialization
     clangDriver
@@ -76,6 +93,8 @@ target_link_libraries(uwgen
     clangBasic
     clangEdit
     clangLex
+    
+    # LLVM
     LLVMX86AsmParser # MC, MCParser, Support, X86CodeGen, X86Desc, X86Info
     LLVMX86CodeGen # Analysis, AsmPrinter, CodeGen, Core, MC, Support, Target, 
                  # X86AsmPrinter, X86Desc, X86Info, X86Utils

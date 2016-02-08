@@ -5,7 +5,6 @@
 void UWrapperGenerator::NextFuncDecl(clang::FunctionDecl* func)
 {
     if (UASTUtils::FuncDeclUtils::HasDLLExport(func)) {
-        std::cout << "===" << std::endl;
         // func->dump();
         m_collectedFuncs.insert(func);
         for (clang::ParmVarDecl* nextParameter : func->parameters()) {

@@ -14,6 +14,7 @@
 class UWrapperGenerator {
 protected:
     std::string m_libName;
+    std::string m_genPath;
     std::unordered_set<clang::EnumDecl*> m_parsedEnumDecls;
     std::unordered_set<clang::RecordDecl*> m_parsedCXXRecordDecls;
 
@@ -21,7 +22,8 @@ protected:
     std::set<clang::EnumDecl*> m_collectedEnums;
     std::set<clang::RecordDecl*> m_collectedRecords;
 public:
-    UWrapperGenerator() {}
+    UWrapperGenerator(std::string genPath) : m_genPath(genPath)
+    {}
     virtual ~UWrapperGenerator() {}
 
     virtual bool IsReady() { return false; } //< Returns true, if the generator is ready for generating!

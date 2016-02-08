@@ -1,17 +1,25 @@
-#include "UWrapperGeneratorVB6.h"
+#include "UWrapperGeneratorVB6Declare.h"
 
 #include "clang/AST/DeclCXX.h"
+#include <boost/filesystem.hpp>
 
-
-void UWrapperGeneratorVB6::Start()
+UWrapperGeneratorVB6Declare::UWrapperGeneratorVB6Declare(const std::string& genPath, bool ignoreUnsigned) : UWrapperGenerator(genPath),
+    m_enumStrDataBuf(""),
+    m_funcStrDataBuf(""),
+    m_typeStrDataBuf(""),
+    m_ignoreUnsigned(ignoreUnsigned)
 {
-    assert(m_dataStream.is_open(), "Data stream must be open!");
-    m_dataStream << "Attribute VB_Name = \"fixme_sample\"" << std::endl
-        << "Option Explicit" << std::endl 
+    m_dataStream.open(genPath + "/out.bas", std::ios::out | std::ios::binary);
+}
+
+void UWrapperGeneratorVB6Declare::Start()
+{
+    assert(m_dataStream.is_open() && "Data stream must be open!");
+    m_dataStream << "Option Explicit" << std::endl 
         << std::endl;
 }
 
-void UWrapperGeneratorVB6::End()
+void UWrapperGeneratorVB6Declare::End()
 {
     m_dataStream << m_enumStrDataBuf 
         << m_typeStrDataBuf
@@ -19,9 +27,8 @@ void UWrapperGeneratorVB6::End()
     m_dataStream.close();
 }
 
-void UWrapperGeneratorVB6::ProcessFuncDecl(clang::FunctionDecl* func)
+void UWrapperGeneratorVB6Declare::ProcessFuncDecl(clang::FunctionDecl* func)
 {
-    // Dead code
     clang::QualType funcReturnType = func->getReturnType();
     bool isVoidReturn = funcReturnType->isVoidType();
     std::string vb6WrapperLine = "Public Declare ";
@@ -53,12 +60,7 @@ void UWrapperGeneratorVB6::ProcessFuncDecl(clang::FunctionDecl* func)
     m_funcStrDataBuf += vb6WrapperLine + "\n";
 }
 
-void UWrapperGeneratorVB6::ProcessEnumDecl(clang::EnumDecl* enumDecl)
-{
-    ProcessEnumDecl(enumDecl, enumDecl->getName());
-}
-
-void UWrapperGeneratorVB6::ProcessEnumDecl(clang::EnumDecl* enumDecl, const std::string& name)
+void UWrapperGeneratorVB6Declare::ProcessEnumDecl(clang::EnumDecl* enumDecl)
 {
     std::string vb6WrapperLine = "Public Enum ";
     vb6WrapperLine += UASTUtils::FindName(enumDecl);
@@ -75,7 +77,7 @@ void UWrapperGeneratorVB6::ProcessEnumDecl(clang::EnumDecl* enumDecl, const std:
     m_enumStrDataBuf += vb6WrapperLine + "\n";
 }
 
-void UWrapperGeneratorVB6::ProcessRecordDecl(clang::RecordDecl* record)
+void UWrapperGeneratorVB6Declare::ProcessRecordDecl(clang::RecordDecl* record)
 {
     if (record->isUnion()) {
         m_collectedRecords.erase(record);
@@ -120,7 +122,7 @@ void UWrapperGeneratorVB6::ProcessRecordDecl(clang::RecordDecl* record)
     m_typeStrDataBuf += vb6WrapperLine + "\n";
 }
 
-void UWrapperGeneratorVB6::Generate()
+void UWrapperGeneratorVB6Declare::Generate()
 {
     // FIXME: DRY Fail
     for (const auto& nextDecl : m_collectedEnums) 
@@ -131,7 +133,7 @@ void UWrapperGeneratorVB6::Generate()
         ProcessRecordDecl(nextDecl);
 }
 
-std::string UWrapperGeneratorVB6::ClangBuiltinTypeToVB6(const clang::BuiltinType* type, bool* success /*= 0*/)
+std::string UWrapperGeneratorVB6Declare::ClangBuiltinTypeToVB6(const clang::BuiltinType* type, bool* success /*= 0*/)
 {
     if (success)
         *success = true;
@@ -165,7 +167,7 @@ std::string UWrapperGeneratorVB6::ClangBuiltinTypeToVB6(const clang::BuiltinType
     }
 }
 
-std::string UWrapperGeneratorVB6::ClangTypeToVB6(const clang::QualType& type, bool* success, bool canHaveRef, bool* isRef /*= 0*/)
+std::string UWrapperGeneratorVB6Declare::ClangTypeToVB6(const clang::QualType& type, bool* success, bool canHaveRef, bool* isRef /*= 0*/)
 {
     if (isRef)
         *isRef = false;
@@ -178,7 +180,6 @@ std::string UWrapperGeneratorVB6::ClangTypeToVB6(const clang::QualType& type, bo
         return ClangBuiltinTypeToVB6(builtInType, success);
     }
     else if (type->getTypeClass() == clang::Type::Pointer) {
-        type->dump();
         const clang::PointerType* pointerType = type->getAs<clang::PointerType>();
         const clang::QualType& pointeeType = pointerType->getPointeeType();
         if (pointeeType->getTypeClass() == clang::Type::Builtin) {

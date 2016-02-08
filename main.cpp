@@ -24,8 +24,15 @@
 #include "clang/Parse/ParseAST.h"
 
 #include "Core/UStartupArgs.h"
-#include "Core/WrapperGenerator/UWrapperGeneratorVB6.h"
+#include "Core/WrapperGenerator/UWrapperGeneratorVB6Declare.h"
 #include "Core/UASTConsumer.h"
+
+#include <boost/filesystem.hpp>
+
+constexpr unsigned int str2int(const char* str, int h = 0)
+{
+    return !str[h] ? 5381 : (str2int(str, h + 1) * 33) ^ str[h];
+}
 
 
 int main(int argc, const char* argv[]) 
@@ -40,11 +47,42 @@ int main(int argc, const char* argv[])
     using clang::Parser;
     using clang::DiagnosticOptions;
     using clang::TextDiagnosticPrinter;
+    using namespace boost;
     
     UStartupArgs startupArgs(argc, argv);
     if (!startupArgs.IsValid())
         return EXIT_FAILURE;
 
+    // Now try to create output path:
+    filesystem::file_status status = filesystem::status(startupArgs.OutputPath);
+    if (status.type() != filesystem::directory_file) {
+        if (status.type() == filesystem::file_not_found) {
+            if (!filesystem::create_directories(startupArgs.OutputPath)) {
+                std::cerr << "Failed to create path: " << startupArgs.OutputPath;
+                return EXIT_FAILURE;
+            }
+        }
+        else
+        {
+            std::cerr << "Path is already in use by another file-type. (Path is not directory)" << std::endl;
+            return EXIT_FAILURE;
+        }
+    }
+
+    // Create the generator and check if it is a valid option:
+    std::unique_ptr<UWrapperGenerator> generator;
+    switch (str2int(startupArgs.Language.c_str()))
+    {
+    case str2int("vb6-declare"):
+        generator = std::make_unique<UWrapperGeneratorVB6Declare>(startupArgs.OutputPath, startupArgs.VB6_IgnoreUnsigned);
+        break;
+    case str2int("vb6-typelib"):
+    default:
+        std::cerr << "Not a valid --lang options: " << startupArgs.OutputPath << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    
     // Create compiler
     CompilerInstance ci;
     DiagnosticOptions diagnosticOptions;
@@ -88,23 +126,22 @@ int main(int argc, const char* argv[])
     const FileEntry *pFile = ci.getFileManager().getFile(argv[1]);
     ci.getSourceManager().setMainFileID(ci.getSourceManager().createFileID(pFile, clang::SourceLocation(), clang::SrcMgr::C_User));
 
-
     // AST and Wrapper:
     // Add compiler instance: ci
-    UWrapperGeneratorVB6 vb6Generator(startupArgs.OutputFile, startupArgs.VB6_IgnoreUnsigned);
-    vb6Generator.setLibName(startupArgs.LibraryName);
-    ci.setASTConsumer(llvm::make_unique<UASTConsumer>(&vb6Generator));
+    
+    generator->setLibName(startupArgs.LibraryName);
+    ci.setASTConsumer(llvm::make_unique<UASTConsumer>(generator.get()));
     ci.createASTContext();
-    if (!vb6Generator.IsReady()) {
+    if (!generator->IsReady()) {
         std::cerr << "Failed to create VB6 generator!" << std::endl
-            << "Outputfile: " << startupArgs.OutputFile << std::endl
+            << "Output-Path: " << startupArgs.OutputPath << std::endl
             << "Libraryname: " << startupArgs.LibraryName << std::endl
             ;
         
 
         return EXIT_FAILURE;
     }
-    vb6Generator.Start();
+    generator->Start();
 
     
     
@@ -113,6 +150,6 @@ int main(int argc, const char* argv[])
     clang::ParseAST(ci.getPreprocessor(), &ci.getASTConsumer(), ci.getASTContext(), false, clang::TU_Complete, nullptr, true);
     ci.getDiagnosticClient().EndSourceFile();
 
-    vb6Generator.End();
+    generator->End();
     return EXIT_SUCCESS;
 }
