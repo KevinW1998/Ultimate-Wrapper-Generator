@@ -13,6 +13,16 @@ void UWrapperGenerator::NextFuncDecl(clang::FunctionDecl* func)
     }
 }
 
+void UWrapperGenerator::Generate()
+{
+    for (const auto& nextDecl : m_collectedEnums)
+        ProcessEnumDecl(nextDecl);
+    for (const auto& nextDecl : m_collectedFuncs)
+        ProcessFuncDecl(nextDecl);
+    for (const auto& nextDecl : m_collectedRecords)
+        ProcessRecordDecl(nextDecl);
+}
+
 void UWrapperGenerator::ProcessTypeAdd(const clang::QualType& typeToProcess)
 {
     // Get raw unqualified type:

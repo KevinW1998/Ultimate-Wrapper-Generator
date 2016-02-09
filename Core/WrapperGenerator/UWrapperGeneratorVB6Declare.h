@@ -22,12 +22,11 @@ public:
     virtual void End() override final;
 
     
-    void ProcessFuncDecl(clang::FunctionDecl* func); //< Process and validate (remove from list if needed) functions
-    void ProcessEnumDecl(clang::EnumDecl* enumDecl); //< Process and validate (remove from list if needed) functions
-    void ProcessRecordDecl(clang::RecordDecl* record); //< Process and validate (remove from list if needed) functions
+    void ProcessFuncDecl(clang::FunctionDecl* func) override final; //< Process and validate (remove from list if needed) functions
+    void ProcessEnumDecl(clang::EnumDecl* enumDecl) override final; //< Process and validate (remove from list if needed) functions
+    void ProcessRecordDecl(clang::RecordDecl* record) override final; //< Process and validate (remove from list if needed) functions
 
     std::string FormatCommentBAS(const char* rawText);
-    virtual void Generate();
 
 
 private:

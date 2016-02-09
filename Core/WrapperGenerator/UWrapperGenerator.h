@@ -34,8 +34,16 @@ public:
     // Gathering
     virtual void NextFuncDecl(clang::FunctionDecl* func);
     
-    // Generation
-    virtual void Generate() {}
+    // Generation - Function
+    virtual void ProcessFuncDecl(clang::FunctionDecl* func) {}
+    
+    // Generation - Enum
+    virtual void ProcessEnumDecl(clang::EnumDecl* enumDecl) {} //< Process and validate (remove from list if needed) functions
+    
+    // Generation - Record
+    virtual void ProcessRecordDecl(clang::RecordDecl* record) {} //< Process and validate (remove from list if needed) functions
+    
+    void Generate();
 
     std::string getLibName() const { return m_libName; }
     void setLibName(const std::string& val) { m_libName = val;}

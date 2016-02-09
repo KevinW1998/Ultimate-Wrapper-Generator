@@ -133,17 +133,6 @@ std::string UWrapperGeneratorVB6Declare::FormatCommentBAS(const char* rawText)
     return textToConv + "\n\n";
 }
 
-void UWrapperGeneratorVB6Declare::Generate()
-{
-    // FIXME: DRY Fail
-    for (const auto& nextDecl : m_collectedEnums) 
-        ProcessEnumDecl(nextDecl);
-    for (const auto& nextDecl : m_collectedFuncs)
-        ProcessFuncDecl(nextDecl);
-    for (const auto& nextDecl : m_collectedRecords)
-        ProcessRecordDecl(nextDecl);
-}
-
 std::string UWrapperGeneratorVB6Declare::ClangBuiltinTypeToVB6(const clang::BuiltinType* type, bool* success /*= 0*/)
 {
     if (success)
