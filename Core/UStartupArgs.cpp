@@ -8,7 +8,8 @@
 UStartupArgs::UStartupArgs(int argc, const char* argv[]) : 
     m_isValid(false),
 
-    VB6_IgnoreUnsigned(false)
+    VB6_IgnoreUnsigned(false),
+    VB6_PtrToLong(false)
 {
     namespace po = boost::program_options;
 
@@ -34,6 +35,7 @@ UStartupArgs::UStartupArgs(int argc, const char* argv[]) :
     po::options_description vb6Desc("VB6 Generation Options");
     vb6Desc.add_options()
         ("vb6-ignore-unsigned",                                                         "If signed variable should just be passed")
+        ("vb6-ptr-to-long",                                                             "If all pointers should directly be converted to Long")
         ;
 
     // Chain:
@@ -70,5 +72,6 @@ UStartupArgs::UStartupArgs(int argc, const char* argv[]) :
     USTARTUPARGS_GETARG(vm, "library-name", LibraryName);
     USTARTUPARGS_GETARG(vm, "resource-path", ResourcePath);
     VB6_IgnoreUnsigned = vm.count("vb6-ignore-unsigned") > 0;
+    VB6_PtrToLong = vm.count("vb6-ptr-to-long") > 0;
 }
 

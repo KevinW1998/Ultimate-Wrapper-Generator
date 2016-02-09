@@ -74,7 +74,7 @@ int main(int argc, const char* argv[])
     switch (str2int(startupArgs.Language.c_str()))
     {
     case str2int("vb6-declare"):
-        generator = std::make_unique<UWrapperGeneratorVB6Declare>(startupArgs.OutputPath, startupArgs.VB6_IgnoreUnsigned);
+        generator = std::make_unique<UWrapperGeneratorVB6Declare>(startupArgs.OutputPath, startupArgs.VB6_IgnoreUnsigned, startupArgs.VB6_PtrToLong);
         break;
     case str2int("vb6-typelib"):
     default:

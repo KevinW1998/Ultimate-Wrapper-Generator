@@ -47,10 +47,10 @@ void UWrapperGeneratorVB6IDL::Generate()
 
 std::string UWrapperGeneratorVB6IDL::ClangBuiltinTypeToVB6Typelib(const clang::BuiltinType* type, bool* success /*= 0*/)
 {
-
+    return "";
 }
 
 std::string UWrapperGeneratorVB6IDL::ClangTypeToVB6Typelib(const clang::QualType& type, bool* success, bool canHaveRef, bool* isRef /*= 0*/)
 {
-
+    return "";
 }

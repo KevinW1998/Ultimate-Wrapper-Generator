@@ -23,6 +23,7 @@ public:
     std::string LibraryName;
     std::string ResourcePath;
     bool VB6_IgnoreUnsigned;
+    bool VB6_PtrToLong;
     std::string Language;
 };
 

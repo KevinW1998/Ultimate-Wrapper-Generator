@@ -36,6 +36,9 @@ public:
 
     std::string getLibName() const { return m_libName; }
     void setLibName(const std::string& val) { m_libName = val;}
+
+private:
+    void ProcessTypeAdd(const clang::QualType& typeToProcess);
 };
 
 #endif

@@ -12,9 +12,9 @@ private:
     std::string m_typeStrDataBuf;
 
     bool m_ignoreUnsigned;
-    
+    bool m_ptrToLong;
 public:
-    UWrapperGeneratorVB6Declare(const std::string& genPath, bool ignoreUnsigned);
+    UWrapperGeneratorVB6Declare(const std::string& genPath, bool ignoreUnsigned, bool ptrToLong);
     virtual ~UWrapperGeneratorVB6Declare() {}
 
     virtual bool IsReady() override final { return m_dataStream.is_open(); };
@@ -24,7 +24,6 @@ public:
     
     void ProcessFuncDecl(clang::FunctionDecl* func); //< Process and validate (remove from list if needed) functions
     void ProcessEnumDecl(clang::EnumDecl* enumDecl); //< Process and validate (remove from list if needed) functions
-    void ProcessEnumDecl(clang::EnumDecl* enumDecl, const std::string& name); //< Process and validate (remove from list if needed) functions
     void ProcessRecordDecl(clang::RecordDecl* record); //< Process and validate (remove from list if needed) functions
 
     virtual void Generate();

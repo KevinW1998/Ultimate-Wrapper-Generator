@@ -3,11 +3,12 @@
 #include "clang/AST/DeclCXX.h"
 #include <boost/filesystem.hpp>
 
-UWrapperGeneratorVB6Declare::UWrapperGeneratorVB6Declare(const std::string& genPath, bool ignoreUnsigned) : UWrapperGenerator(genPath),
+UWrapperGeneratorVB6Declare::UWrapperGeneratorVB6Declare(const std::string& genPath, bool ignoreUnsigned, bool ptrToLong) : UWrapperGenerator(genPath),
     m_enumStrDataBuf(""),
     m_funcStrDataBuf(""),
     m_typeStrDataBuf(""),
-    m_ignoreUnsigned(ignoreUnsigned)
+    m_ignoreUnsigned(ignoreUnsigned),
+    m_ptrToLong(ptrToLong)
 {
     m_dataStream.open(genPath + "/out.bas", std::ios::out | std::ios::binary);
 }
@@ -167,6 +168,7 @@ std::string UWrapperGeneratorVB6Declare::ClangBuiltinTypeToVB6(const clang::Buil
     }
 }
 
+#include <iostream>
 std::string UWrapperGeneratorVB6Declare::ClangTypeToVB6(const clang::QualType& type, bool* success, bool canHaveRef, bool* isRef /*= 0*/)
 {
     if (isRef)
@@ -191,6 +193,9 @@ std::string UWrapperGeneratorVB6Declare::ClangTypeToVB6(const clang::QualType& t
             case clang::BuiltinType::Char_U: return "String"; //char* --> String
             case clang::BuiltinType::Void: return "Long"; // void* --> Long
             default:
+                if (m_ptrToLong)
+                    return "Long";
+
                 if (canHaveRef) {
                     if (isRef)
                         *isRef = true;
@@ -198,6 +203,9 @@ std::string UWrapperGeneratorVB6Declare::ClangTypeToVB6(const clang::QualType& t
                 }
             }
         }
+        if (m_ptrToLong)
+            return "Long";
+
         std::string conv = ClangTypeToVB6(pointeeType, success, false);
         if (canHaveRef) {
             if (isRef)
@@ -228,5 +236,11 @@ std::string UWrapperGeneratorVB6Declare::ClangTypeToVB6(const clang::QualType& t
     }
     if (success)
         *success = false;
+
+    
+    std::cout << type->getTypeClassName() << std::endl;
+    type->dump();
+    
+
     return "<Unsupported>";
 }
