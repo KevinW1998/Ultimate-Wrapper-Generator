@@ -62,6 +62,7 @@ add_executable (uwgen
     Core/UStartupArgs.cpp
     Core/UASTUtils.h
     Core/UASTUtils.cpp
+    Core/Resources/UStrResources.h
     Core/WrapperGenerator/UWrapperGenerator.h
     Core/WrapperGenerator/UWrapperGenerator.cpp
     Core/WrapperGenerator/UWrapperGeneratorVB6Declare.h

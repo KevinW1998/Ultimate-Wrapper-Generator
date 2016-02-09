@@ -26,12 +26,18 @@ public:
     {}
     virtual ~UWrapperGenerator() {}
 
+    // General
     virtual bool IsReady() { return false; } //< Returns true, if the generator is ready for generating!
     virtual void Start() {} //< Code when the generator is starting!
     virtual void End() {} //< Code when the generator is starting!
 
+    // Formatting
+    virtual std::string FormatComment(const char* rawText) { return rawText; }
+
+    // Gathering
     virtual void NextFuncDecl(clang::FunctionDecl* func);
     
+    // Generation
     virtual void Generate() {}
 
     std::string getLibName() const { return m_libName; }

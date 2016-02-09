@@ -26,7 +26,9 @@ public:
     void ProcessEnumDecl(clang::EnumDecl* enumDecl); //< Process and validate (remove from list if needed) functions
     void ProcessRecordDecl(clang::RecordDecl* record); //< Process and validate (remove from list if needed) functions
 
+    virtual std::string FormatComment(const char* rawText);
     virtual void Generate();
+
 
 private:
     std::string ClangBuiltinTypeToVB6(const clang::BuiltinType* type, bool* success = 0);

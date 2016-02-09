@@ -2,6 +2,8 @@
 
 #include "clang/AST/DeclCXX.h"
 #include <boost/filesystem.hpp>
+#include <boost/algorithm/string/replace.hpp>
+#include "../Resources/UStrResources.h"
 
 UWrapperGeneratorVB6Declare::UWrapperGeneratorVB6Declare(const std::string& genPath, bool ignoreUnsigned, bool ptrToLong) : UWrapperGenerator(genPath),
     m_enumStrDataBuf(""),
@@ -16,7 +18,8 @@ UWrapperGeneratorVB6Declare::UWrapperGeneratorVB6Declare(const std::string& genP
 void UWrapperGeneratorVB6Declare::Start()
 {
     assert(m_dataStream.is_open() && "Data stream must be open!");
-    m_dataStream << "Option Explicit" << std::endl 
+    m_dataStream << FormatComment(GEN_HEADER)
+        << "Option Explicit" << std::endl 
         << std::endl;
 }
 
@@ -121,6 +124,13 @@ void UWrapperGeneratorVB6Declare::ProcessRecordDecl(clang::RecordDecl* record)
     vb6WrapperLine += "End Type\n";
 
     m_typeStrDataBuf += vb6WrapperLine + "\n";
+}
+
+std::string UWrapperGeneratorVB6Declare::FormatComment(const char* rawText)
+{
+    std::string textToConv = std::string("' ") + rawText;
+    boost::replace_all(textToConv, "\n", "\n' ");
+    return textToConv + "\n\n";
 }
 
 void UWrapperGeneratorVB6Declare::Generate()
