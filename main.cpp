@@ -25,6 +25,7 @@
 
 #include "Core/UStartupArgs.h"
 #include "Core/WrapperGenerator/UWrapperGeneratorVB6Declare.h"
+#include "Core/WrapperGenerator/UWrapperGeneratorVB6IDL.h"
 #include "Core/UASTConsumer.h"
 
 #include <boost/filesystem.hpp>
@@ -77,6 +78,8 @@ int main(int argc, const char* argv[])
         generator = std::make_unique<UWrapperGeneratorVB6Declare>(startupArgs.OutputPath, startupArgs.VB6_IgnoreUnsigned, startupArgs.VB6_PtrToLong);
         break;
     case str2int("vb6-typelib"):
+        generator = std::make_unique<UWrapperGeneratorVB6IDL>(startupArgs.OutputPath, startupArgs.VB6_IgnoreUnsigned, startupArgs.VB6_PtrToLong);
+        break;
     default:
         std::cerr << "Not a valid --lang options: " << startupArgs.OutputPath << std::endl;
         return EXIT_FAILURE;

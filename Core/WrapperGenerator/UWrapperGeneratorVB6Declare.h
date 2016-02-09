@@ -26,7 +26,7 @@ public:
     void ProcessEnumDecl(clang::EnumDecl* enumDecl); //< Process and validate (remove from list if needed) functions
     void ProcessRecordDecl(clang::RecordDecl* record); //< Process and validate (remove from list if needed) functions
 
-    virtual std::string FormatComment(const char* rawText);
+    std::string FormatCommentBAS(const char* rawText);
     virtual void Generate();
 
 

@@ -31,9 +31,6 @@ public:
     virtual void Start() {} //< Code when the generator is starting!
     virtual void End() {} //< Code when the generator is starting!
 
-    // Formatting
-    virtual std::string FormatComment(const char* rawText) { return rawText; }
-
     // Gathering
     virtual void NextFuncDecl(clang::FunctionDecl* func);
     
