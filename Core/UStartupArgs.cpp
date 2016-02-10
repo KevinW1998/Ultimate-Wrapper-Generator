@@ -28,7 +28,7 @@ UStartupArgs::UStartupArgs(int argc, const char* argv[]) :
         ("input-file",      po::value<std::string>(),                                   "The input header/cpp file")
         ("output-path,o",   po::value<std::string>()->default_value("generated"),       "The folder, in which all generated files are written")
         ("include-path,I",  po::value< std::vector<std::string> >(),                    "Additional include paths. Depending on your installation you may have to also add the paths for mingw/g++ include files")
-        ("library-name,L",  po::value<std::string>()->default_value("example_library"), "The name of the library. This may is needed for loading the target library")
+        ("library-name,L",  po::value<std::string>()->default_value(""),                "The name of the library. This may is needed for loading the target library")
         ("resource-path,R", po::value<std::string>()->default_value(""),                "The clang resource path. This may is needed for system include files! i.e.: lib/clang/3.9.0/")
         ;
     // #2 Language Options (VB6)

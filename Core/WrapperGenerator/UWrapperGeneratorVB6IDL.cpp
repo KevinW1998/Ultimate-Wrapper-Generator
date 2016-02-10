@@ -33,7 +33,15 @@ void UWrapperGeneratorVB6IDL::Start()
 
 void UWrapperGeneratorVB6IDL::End()
 {
-    m_dataIDLStream << "}";
+    m_dataIDLStream << m_enumStrDataBuf << "\n";
+    m_dataIDLStream <<
+        "\t[dllname(\"" + m_libName + "\")]\n"
+        "\tmodule FixMeFuncs\n"
+        "\t{\n";
+    m_dataIDLStream << m_funcStrDataBuf;
+    m_dataIDLStream << 
+        "\t}\n"
+        "}";
     m_dataIDLStream.close();
     m_dataDefStream.close();
 }
@@ -42,15 +50,40 @@ void UWrapperGeneratorVB6IDL::ProcessFuncDecl(clang::FunctionDecl* func)
 {
     std::string genDefStr = "\t" + (std::string)func->getName() + "\n";
     m_dataDefStream << genDefStr;
+    
+    std::string funcName = UASTUtils::FindName(func);
 
     std::string typelibWrapperLine = "";
+    typelibWrapperLine += "\t\t[entry(\"" + funcName + "\")]\n"
+        "\t\t" + ClangTypeToVB6Typelib(func->getReturnType()) + " " + funcName + "(";
+    for (clang::ParmVarDecl* nextParameter : func->parameters()) {
+        typelibWrapperLine += ClangTypeToVB6Typelib(nextParameter->getType(), nullptr);
+        typelibWrapperLine += " " + UASTUtils::FindName(nextParameter) + ", ";
+    }
+    if (func->getNumParams() != 0)
+        typelibWrapperLine = typelibWrapperLine.substr(0, typelibWrapperLine.length() - 2);
+    typelibWrapperLine += ");";
 
     m_funcStrDataBuf += typelibWrapperLine + "\n";
 }
 
 void UWrapperGeneratorVB6IDL::ProcessEnumDecl(clang::EnumDecl* enumDecl)
 {
+    std::string enumName = UASTUtils::FindName(enumDecl);
+    std::string typelibWrapperLine = "";
+    typelibWrapperLine += "\ttypedef enum " + enumName + "\n"
+        "\t{\n";
+    for (clang::EnumConstantDecl* nextConst : enumDecl->enumerators()) {
+        typelibWrapperLine += "\t\t" + UASTUtils::FindName(nextConst) + " = " 
+            + std::to_string(nextConst->getInitVal().getExtValue()) + ",\n";
+    }
 
+    if (enumDecl->enumerator_begin() != enumDecl->enumerator_end()) {
+        typelibWrapperLine = typelibWrapperLine.substr(0, typelibWrapperLine.length() - 2) + "\n";
+    }
+    typelibWrapperLine += "\t} " + enumName + ";\n\n";
+
+    m_enumStrDataBuf += typelibWrapperLine + "\n";
 }
 
 void UWrapperGeneratorVB6IDL::ProcessRecordDecl(clang::RecordDecl* record)
@@ -73,7 +106,8 @@ std::string UWrapperGeneratorVB6IDL::ClangBuiltinTypeToVB6Typelib(const clang::B
     if (success)
         *success = true;
     switch (type->getKind()) {
-        case clang::BuiltinType::Bool: return "Boolean";
+        case clang::BuiltinType::Void: return "void";
+        case clang::BuiltinType::Bool: return "long";
         case clang::BuiltinType::SChar:
         case clang::BuiltinType::Char_S:
         case clang::BuiltinType::UChar:
@@ -106,7 +140,7 @@ std::string UWrapperGeneratorVB6IDL::ClangBuiltinTypeToVB6Typelib(const clang::B
 std::string UWrapperGeneratorVB6IDL::ClangTypeToVB6Typelib(const clang::QualType& type, bool* success)
 {
     if (type->isFunctionPointerType()) {
-        return "Long";
+        return "long";
     }
     else if (type->getTypeClass() == clang::Type::Builtin) {
         const clang::BuiltinType* builtInType = type->getAs<clang::BuiltinType>();
@@ -121,14 +155,14 @@ std::string UWrapperGeneratorVB6IDL::ClangTypeToVB6Typelib(const clang::QualType
             case clang::BuiltinType::SChar:
             case clang::BuiltinType::Char_S:
             case clang::BuiltinType::UChar:
-            case clang::BuiltinType::Char_U: return "String"; //char* --> String
-            case clang::BuiltinType::Void: return "Long"; // void* --> Long
+            case clang::BuiltinType::Char_U: return "LPSTR"; //char* --> String
+            case clang::BuiltinType::Void: return "long"; // void* --> Long
             default:
                 
                 break;
             }
         }
-        return "Long";
+        return "long";
     }
     else if (type->getTypeClass() == clang::Type::Typedef) {
         return ClangTypeToVB6Typelib(type->getAs<clang::TypedefType>()->desugar(), success);

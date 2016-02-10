@@ -70,6 +70,11 @@ int main(int argc, const char* argv[])
         }
     }
 
+    if (startupArgs.LibraryName == "") {
+        std::cerr << "Please provide a valid library name. (The name of the target dll)" << std::endl;
+        return EXIT_FAILURE;
+    }
+
     // Create the generator and check if it is a valid option:
     std::unique_ptr<UWrapperGenerator> generator;
     switch (str2int(startupArgs.Language.c_str()))
@@ -84,6 +89,8 @@ int main(int argc, const char* argv[])
         std::cerr << "Not a valid --lang options: " << startupArgs.OutputPath << std::endl;
         return EXIT_FAILURE;
     }
+    generator->setLibName(startupArgs.LibraryName);
+
 
     
     // Create compiler
@@ -132,7 +139,6 @@ int main(int argc, const char* argv[])
     // AST and Wrapper:
     // Add compiler instance: ci
     
-    generator->setLibName(startupArgs.LibraryName);
     ci.setASTConsumer(llvm::make_unique<UASTConsumer>(generator.get()));
     ci.createASTContext();
     if (!generator->IsReady()) {
