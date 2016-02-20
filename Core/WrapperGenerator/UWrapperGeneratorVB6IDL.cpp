@@ -74,8 +74,13 @@ void UWrapperGeneratorVB6IDL::ProcessEnumDecl(clang::EnumDecl* enumDecl)
     typelibWrapperLine += "\ttypedef enum " + enumName + "\n"
         "\t{\n";
     for (clang::EnumConstantDecl* nextConst : enumDecl->enumerators()) {
+        #ifndef __unix__
+        //error: ‘const class llvm::APSInt’ has no member named ‘getExtValue’
         typelibWrapperLine += "\t\t" + UASTUtils::FindName(nextConst) + " = " 
             + std::to_string(nextConst->getInitVal().getExtValue()) + ",\n";
+        #else
+        typelibWrapperLine += "\t\t" + UASTUtils::FindName(nextConst) + ",\n";
+        #endif
     }
 
     if (enumDecl->enumerator_begin() != enumDecl->enumerator_end()) {

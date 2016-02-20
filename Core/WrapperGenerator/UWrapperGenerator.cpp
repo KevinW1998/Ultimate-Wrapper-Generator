@@ -1,6 +1,5 @@
 #include "UWrapperGenerator.h"
 
-
 #include <iostream>
 void UWrapperGenerator::NextFuncDecl(clang::FunctionDecl* func)
 {

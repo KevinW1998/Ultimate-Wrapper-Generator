@@ -8,18 +8,10 @@ project (Ultimate-Wrapper-Generator)
 set(LLVM_BUILD_ROOT "" CACHE PATH "The llvm root build directory.")
 set(LLVM_SRC_ROOT "" CACHE PATH "The llvm source directory.")
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++1y -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
+
 # Defines
 add_definitions(-DBOOST_ALL_NO_LIB)
-
-
-
-
-
-
-
-
-
-
 
 # =========== GENERATION PROCESS ============
 
@@ -91,6 +83,7 @@ target_link_libraries(uwgen
     clangSema
     clangAnalysis
     clangAST
+    clangASTMatchers
     clangBasic
     clangEdit
     clangLex
@@ -118,6 +111,12 @@ target_link_libraries(uwgen
     LLVMBitReader # Core, Support
     LLVMCore # Support
     LLVMSupport
+    
+    #misc
+    z
+    pthread
+    ncurses
+    dl
 )
 
 

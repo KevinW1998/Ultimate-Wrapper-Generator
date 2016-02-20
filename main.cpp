@@ -29,6 +29,39 @@
 #include "Core/UASTConsumer.h"
 
 #include <boost/filesystem.hpp>
+#ifdef __unix__
+#include <memory>
+namespace std {
+    template<class T> struct _Unique_if {
+        typedef unique_ptr<T> _Single_object;
+    };
+
+    template<class T> struct _Unique_if<T[]> {
+        typedef unique_ptr<T[]> _Unknown_bound;
+    };
+
+    template<class T, size_t N> struct _Unique_if<T[N]> {
+        typedef void _Known_bound;
+    };
+
+    template<class T, class... Args>
+        typename _Unique_if<T>::_Single_object
+        make_unique(Args&&... args) {
+            return unique_ptr<T>(new T(std::forward<Args>(args)...));
+        }
+
+    template<class T>
+        typename _Unique_if<T>::_Unknown_bound
+        make_unique(size_t n) {
+            typedef typename remove_extent<T>::type U;
+            return unique_ptr<T>(new U[n]());
+        }
+
+    template<class T, class... Args>
+        typename _Unique_if<T>::_Known_bound
+        make_unique(Args&&...) = delete;
+}
+#endif
 
 constexpr unsigned int str2int(const char* str, int h = 0)
 {
@@ -44,7 +77,9 @@ int main(int argc, const char* argv[])
     using clang::FileEntry;
     using clang::Token;
     using clang::ASTContext;
-    using clang::ASTConsumer;
+    #ifndef __unix__
+    using clDeclSpecKeywordang::ASTConsumer;
+    #endif
     using clang::Parser;
     using clang::DiagnosticOptions;
     using clang::TextDiagnosticPrinter;
@@ -109,7 +144,9 @@ int main(int argc, const char* argv[])
     langOpts.CXXExceptions = 1;
     langOpts.POSIXThreads = 1;
     langOpts.SpellChecking = 1;
+    #ifndef __unix__
     langOpts.DeclSpecKeyword = 1;
+    #endif
     ci.getInvocation().setLangDefaults(langOpts, clang::IK_CXX, clang::LangStandard::lang_gnucxx11);
     
     // Add additional include paths:

@@ -72,8 +72,11 @@ void UWrapperGeneratorVB6Declare::ProcessEnumDecl(clang::EnumDecl* enumDecl)
     for (clang::EnumConstantDecl* nextConst : enumDecl->enumerators()) {
         vb6WrapperLine += "\t";
         vb6WrapperLine += nextConst->getName();
+        #ifndef __unix__
         vb6WrapperLine += " = ";
+        //error: ‘const class llvm::APSInt’ has no member named ‘getExtValue’
         vb6WrapperLine += std::to_string(nextConst->getInitVal().getExtValue());
+        #endif
         vb6WrapperLine += "\n";
     }
     vb6WrapperLine += "End Enum\n";

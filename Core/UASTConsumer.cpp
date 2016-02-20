@@ -10,7 +10,9 @@ bool UASTConsumer::HandleTopLevelDecl(clang::DeclGroupRef d)
         clang::SourceManager& mgr = nextDecl->getASTContext().getSourceManager();
         if (nextDecl->getKind() == clang::Decl::LinkageSpec) {
             clang::LinkageSpecDecl* linkGroup = llvm::cast<clang::LinkageSpecDecl>(nextDecl);
+            #ifndef __unix__
             assert(linkGroup, "linkGroup must not be null!");
+            #endif
 
             // Now go through all items, which are in extern "C"
             for (const auto& nextLinkDecl : linkGroup->decls()) 
@@ -21,12 +23,16 @@ bool UASTConsumer::HandleTopLevelDecl(clang::DeclGroupRef d)
                 case clang::Decl::Kind::Function:
                     {
                         clang::FunctionDecl* nextLinkFuncDecl = llvm::cast<clang::FunctionDecl>(nextLinkDecl);
+                        #ifndef __unix__
                         assert("nextLinkFuncDecl must not be null!");
+                        #endif
                         // Pass linked function to the generator
                         m_generator->NextFuncDecl(nextLinkFuncDecl);
 
                         break;
                     }
+                default:
+                        break;
                 }
             }
 
